@@ -1,3 +1,4 @@
+
 html,
 body {
   padding: 0;
@@ -22,5 +23,27 @@ a {
   body {
     color: white;
     background: black;
+    position: relative;
   }
+}
+
+.elevation-1 {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24) !important;
+}
+
+.cab{
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.sapo{
+  text-align: left;
+}
+
+#RFS-Label{
+  margin-top: 5px;
+}
+
+#RFS-StepperContainer{
+  margin-bottom: 15px;
 }
