@@ -3,11 +3,10 @@ import FullCalendar from '@fullcalendar/react' // must go before plugins
 import interactionPlugin from "@fullcalendar/interaction";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import dayGridPlugin from '@fullcalendar/daygrid' // a plugin!
-import dayGridMonth from '@fullcalendar/daygrid' // a plugin!
 import listPlugin from '@fullcalendar/list'
 import Layout from '../components/Layout'
 import {io } from "socket.io-client"
-import * as moment from 'moment'
+import moment from 'moment';
 import { toast } from 'react-toastify'
 import { Button, Modal, ModalHeader, ModalBody, ModalFooter } from 'reactstrap'
 import { Stepper, Step } from 'react-form-stepper'
