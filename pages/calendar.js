@@ -4,8 +4,6 @@ import interactionPlugin from "@fullcalendar/interaction";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import dayGridPlugin from '../node_modules/@fullcalendar/daygrid' // a plugin!
 import dayGridMonth from '../node_modules/@fullcalendar/daygrid' // a plugin!
-import timeGrid from '../node_modules/@fullcalendar/timeGrid'
-//import esLocale from '@fullcalendar/core/locales/es';
 import listPlugin from '@fullcalendar/list'
 import Layout from '../components/Layout'
 import {io } from "socket.io-client"
