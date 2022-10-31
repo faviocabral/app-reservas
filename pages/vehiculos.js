@@ -1,7 +1,7 @@
 import React, {useState}  from 'react'
 import Layout from '../components/Layout'
 
-function vehiculos() {
+function Vehiculos() {
 
   const [cars, setCars] = useState(
     [
@@ -56,4 +56,4 @@ function vehiculos() {
   )
 }
 
-export default vehiculos
+export default Vehiculos

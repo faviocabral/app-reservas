@@ -1,9 +1,9 @@
 import React, {useEffect, useRef, createRef, useState} from 'react'
-import FullCalendar from '../node_modules/@fullcalendar/react' // must go before plugins
+import FullCalendar from '@fullcalendar/react' // must go before plugins
 import interactionPlugin from "@fullcalendar/interaction";
 import timeGridPlugin from "@fullcalendar/timegrid";
-import dayGridPlugin from '../node_modules/@fullcalendar/daygrid' // a plugin!
-import dayGridMonth from '../node_modules/@fullcalendar/daygrid' // a plugin!
+import dayGridPlugin from '@fullcalendar/daygrid' // a plugin!
+import dayGridMonth from '@fullcalendar/daygrid' // a plugin!
 import listPlugin from '@fullcalendar/list'
 import Layout from '../components/Layout'
 import {io } from "socket.io-client"
@@ -21,7 +21,7 @@ import Swal from 'sweetalert2'
 import withReactContent from 'sweetalert2-react-content'
 const MySwal = withReactContent(Swal)
 
-function calendar() {
+function Calendar() {
 
   const [evento , setEvento ] = useState([
     //{ title: 'EN USO...' , date : '2022-10-04' , overlap:false , display:'background' },
@@ -526,4 +526,4 @@ function calendar() {
 )
 }
 
-export default calendar
+export default Calendar
