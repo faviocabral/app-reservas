@@ -11,10 +11,8 @@ import { toast } from 'react-toastify'
 import { Button, Modal, ModalHeader, ModalBody, ModalFooter } from 'reactstrap'
 import { Stepper, Step } from 'react-form-stepper'
 
-
 let socket 
 socket = io("http://localhost:8000");
-
 
 import Swal from 'sweetalert2'
 import withReactContent from 'sweetalert2-react-content'
@@ -73,7 +71,7 @@ function Calendar() {
       console.log('connected' , socket.id)
       if(localStorage.hasOwnProperty('addEvent')){
         //listOtherEvents()
-      }      
+      } 
     })
 
     socket.on("usuarios", (msg)=>{
@@ -156,7 +154,6 @@ function Calendar() {
 
     const listen = ()=>{
         setAlto(window.innerHeight)
-        //console.log(window.innerHeight)
     }
 
     ///////////////////////////////////////////////////////////////////////////

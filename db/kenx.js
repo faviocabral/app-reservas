@@ -1,2 +1,3 @@
 const config = require('../knexfile.js')['development']
-module.exports = require('knex')(config)
+const db = require('knex')(config)
+module.exports = db

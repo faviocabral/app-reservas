@@ -96,7 +96,6 @@
         table.string('user_ins')
         table.string('user_upd')
       })
-
   };
   
   /**
