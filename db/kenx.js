@@ -1,3 +1,25 @@
 const config = require('../knexfile.js')['development']
-const db = require('knex')(config)
-module.exports = db
+
+const conn1 = require('knex')({
+	client: 'mysql',
+	connection: {
+	  host : '127.0.0.1',
+	  port : 3306,
+	  user : 'root',	
+	  password : '',
+	  database : 'cobros'
+	}
+  });
+
+const conn2 = require('knex')({
+	client: 'mssql',
+	connection: {
+	  host : '192.168.10.160',
+	  //port : 3306,
+	  user : 'sa',
+	  password : 'Sqlservices*',
+	  database : 'gardenkia'
+	}
+  });
+
+module.exports = {conn1 , conn2 }

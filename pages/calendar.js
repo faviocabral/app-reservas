@@ -11,6 +11,8 @@ import { toast } from 'react-toastify'
 import { Button, Modal, ModalHeader, ModalBody, ModalFooter } from 'reactstrap'
 import { Stepper, Step } from 'react-form-stepper'
 
+
+
 let socket 
 socket = io("http://localhost:8000");
 
@@ -56,12 +58,16 @@ function Calendar() {
   const [modal, setModal] = useState('')
   const [alto, setAlto] = useState(100);
   const [modal2, setModal2] = useState(false)
+  const [modal3, setModal3] = useState(false)
   const [agenda, setAgenda] = useState({}) 
   const [baseDatos, setBaseDatos] = useState([])
   const fechaIRef = useRef()
   const fechaFRef = useRef()
   const clienteRef = useRef()
-  
+  const [showCliente , setShowCliente] = useState(false) // para abrir la ventana de busqueda de cliente..
+  const [listaCliente, setListaCliente] = useState() // para abrir la ventana de
+
+
   ////////////////////////////////
   // SETEOS INICIALES DEL CALENDARIO
   ////////////////////////////////
@@ -155,6 +161,15 @@ function Calendar() {
     const listen = ()=>{
         setAlto(window.innerHeight)
     }
+
+    const buscarCliente = async ()=>{ 
+      fetch('http://localhost:3000/api/clientes/1')
+      .then(response => response.json())
+      .then(data => {
+        console.log(data)
+      });
+    }
+
 
     ///////////////////////////////////////////////////////////////////////////
     /// NUEVO EVENTO 
@@ -382,15 +397,37 @@ function Calendar() {
                         </div>              
                       </div>
                       <div className='row'>
-                        <div className="input-group mb-3">
-                          <input type="text" className="form-control" placeholder="Ingrese codigo cliente..." required />
-                          <button className="btn btn-primary" type="btn">Buscar</button>
+                          <div className="input-group mt-3 mb-3">                          
+                            <button className="btn btn-primary dropdown-toggle" onClick={()=> setShowCliente( !showCliente ) }data-bs-toggle="dropdown"  type="btn"> <b> <i class="bi bi-search"></i> </b> </button>
+                            <ul class={`dropdown-menu ${(showCliente)? 'show':''}`}  style={{top: '40px', width: '96%'}}>
+                              <li>
+                                  <h5 className="text-center">LISTA DE CLIENTES</h5>
+                                  <form style={{marginLeft:'5px' , marginRight:'5px'}}>
+                                    <div className="input-group">
+                                      <button className="btn btn-secondary " type="btn" onClick={buscarCliente}>Buscar</button>
+                                      <input type="text" className="form-control" placeholder="codigo cliente..." required id="buscarCliente" name="buscarCliente"/>
+                                    </div>
+                                  </form>
+                                  <hr></hr>
+                                  <table class="table table-hover" style={{marginLeft: '10px', marginRight: '3px', minHeight: '200px'}}>
+                                    <thead >
+                                      <th>codigo</th>
+                                      <th>cliente</th>
+                                      <th className='text-center'>#</th>
+                                    </thead>
+                                    <tbody>
+                                      <td style={{width:'20%'}}>c123456</td>
+                                      <td>javier gonzalez</td>
+                                      <td style={{width:'20%'}}><span class="badge bg-secondary elevation-1 " style={{cursor:'pointer'}}>Asignar cliente</span></td>
+                                    </tbody>
+                                  </table>
+                              </li>
+                            </ul>                            
+
+                            <input type="text" className="form-control" placeholder="codigo cliente..." required id="codigoCliente" name="nombrecliente" readOnly/>
+                            <input type="text" className="form-control" id="nombreCliente" placeholder="Nombre de Cliente" name="nombreCliente" defaultValue={''} ref={clienteRef} value={agenda?.title} style={{width:'35%'}} readOnly/>
+                          </div>
                         </div>
-                        
-                        <div className="mb-3">
-                          <input type="text" className="form-control" id="nombreCliente" placeholder="Nombre de Cliente" name="nombreCliente" defaultValue={''} ref={clienteRef} value={agenda?.title} />
-                        </div>
-                      </div>
 
                     </form>
                     

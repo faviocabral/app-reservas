@@ -34,6 +34,7 @@
     "socket.io-client": "^4.5.2",
     "sweetalert2": "^11.5.2",
     "sweetalert2-react-content": "^5.0.3",
+    "tedious": "^15.1.0",
     "yulp": "^0.2.3"
   },
   "devDependencies": {
