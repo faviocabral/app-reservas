@@ -1,4 +1,4 @@
-import React, {useEffect, useRef, createRef, useState} from 'react'
+import React, {useEffect, useRef, createRef, useState , useMemo } from 'react'
 import FullCalendar from '@fullcalendar/react' // must go before plugins
 import interactionPlugin from "@fullcalendar/interaction";
 import timeGridPlugin from "@fullcalendar/timegrid";
@@ -10,8 +10,7 @@ import moment from 'moment';
 import { toast } from 'react-toastify'
 import { Button, Modal, ModalHeader, ModalBody, ModalFooter } from 'reactstrap'
 import { Stepper, Step } from 'react-form-stepper'
-
-
+import Buscador from '../components/Buscador.js' //modal.
 
 let socket 
 socket = io("http://localhost:8000");
@@ -30,7 +29,8 @@ function Calendar() {
   ])
 
   //VEHICULOS DISPONIBLES
-  const vehiculos = [ 
+  /*
+  const vehiculos = [
     { marca: 'RENTING - KIA', modelo:'NIRO', chapa: 'AAGV085', vin:'KNACB81CGM5423978', anho:2021},
     { marca: 'RENTING - KIA', modelo:'SOLUTO', chapa: 'AAGZ676', vin:'LJD0AA29BN0150565', anho:2021},
     { marca: 'RENTING - KIA', modelo:'SOLUTO', chapa: 'AAHT600', vin:'LJD0AA29BN0152796', anho:2021},
@@ -41,8 +41,8 @@ function Calendar() {
     { marca: 'RENTING - KIA', modelo:'SOLUTO', chapa: 'AAHT599', vin:'LJD0AA29BN0152748', anho:2021},
     { marca: 'RENTING - NISSAN', modelo:'VERSA DRIVE', chapa: 'AAGV083', vin:'94DBCAN17MB101331', anho:2021},
     { marca: 'RENTING - NISSAN', modelo:'KICKS', chapa: 'AAGV091', vin:'94DFCAO15NB201839', anho:2022},
-   ]
-   
+  ]
+  */
    //MODELOS HABILITADOS 
   const modelos = [
     {modelo: 'Kia Niro', foto: 'https://www.kia.com/content/dam/kwcms/kme/global/en/assets/vehicles/niro-sg2/discover/kia-niro-ev-my23-actionpanel-get-yours.jpg'},
@@ -64,10 +64,18 @@ function Calendar() {
   const fechaIRef = useRef()
   const fechaFRef = useRef()
   const clienteRef = useRef()
-  const [showCliente , setShowCliente] = useState(false) // para abrir la ventana de busqueda de cliente..
-  const [listaCliente, setListaCliente] = useState() // para abrir la ventana de
-
-
+  const buscarRef = useRef()
+  const codigoCliRef = useRef()
+  const nombreCliRef = useRef()
+  const [listaCliente, setListaCliente] = useState([]) // para abrir la ventana de
+  const dataInterface = {fechai:'' , fechaf:'', codigoCliente:'', nombreCliente:'' , taller: 0 }
+  const [data, setData] = useState(dataInterface)
+  const [buscar, setBuscar] = useState('')
+  const [taller , setTaller]  = useState([])
+  //buscador 
+  const [abrirBuscador, setAbrirBuscador] = useState('')
+  const [titulo , setTitulo ] = useState('')
+  const [vehiculos, setVehiculos] = useState([])
   ////////////////////////////////
   // SETEOS INICIALES DEL CALENDARIO
   ////////////////////////////////
@@ -140,6 +148,11 @@ function Calendar() {
       //setEvento([...evento, item ])
     }
 
+    //buscar los talleres 
+    talleres()
+    listaVehiculos()
+    listaAgenda()
+
   }, []);
 
 
@@ -152,7 +165,6 @@ function Calendar() {
       }          
   }
 
-
     useEffect(()=>{
         setAlto(window.innerHeight )
         window.addEventListener("resize",listen )
@@ -162,21 +174,105 @@ function Calendar() {
         setAlto(window.innerHeight)
     }
 
-    const buscarCliente = async ()=>{ 
-      fetch('http://localhost:3000/api/clientes/1')
-      .then(response => response.json())
-      .then(data => {
-        console.log(data)
-      });
+    const listaVehiculos = async()=>{
+      await fetch('api/vehiculos' )
+      .then(response => response.json()) 
+      .then(json => {
+        console.log(json)
+        let lista = [] = json.rows.map(item=> {
+          return({
+            marca: item.marca, 
+            modelo: item.modelo, 
+            chapa: item.chapa, 
+            vin: item.vin,
+            anho: item.anho, 
+            id: item.id
+          })
+        })
+        setVehiculos(lista)
+       
+      })
+      .catch(err => console.log(err))      
     }
 
+    const listaAgenda= async () =>{
+      await fetch('api/calendar' )
+      .then(response => response.json()) 
+      .then(json => {
+        let lista = json.agenda.map(item => {  
+          return({...item,
+            date: item.fecha,
+            start: item.fechai,
+            end: item.fechaf,
+            title: item.titulo,
+            vehiculos: vehiculos.filter(item2 => item.det.map(item3 => item3.vin ).includes(item2.vin) )
+          })
+
+        })
+        setEvento(lista)
+        alert(JSON.stringify(lista))
+       
+      })
+      .catch(err => console.log(err))      
+
+    }
+
+    const talleres = async()=>{
+      await fetch('api/talleres' )
+      .then(response => response.json()) 
+      .then(json => {
+        console.log(json)
+        setTaller(json.rows)
+      })
+      .catch(err => console.log(err))
+      
+    }
+
+
+    const buscarCliente = async(e)=>{ 
+      setAbrirBuscador('show')
+      setTitulo('Buscar Cliente')
+      setTimeout(() => {
+        buscarRef.current.focus()
+      }, 200);
+    }
+
+    const recuperarCliente = async (e)=>{
+      e.preventDefault()
+
+      let codigo = document.getElementsByName('buscar')[0].value
+      await fetch('http://localhost:3000/api/clientes/'+ codigo)
+      .then(response => response.json())
+      .then(data => {
+        setListaCliente(data.rows)
+        setTimeout(() => {
+          buscarRef.current.value = codigo 
+          buscarRef.current.focus()
+        }, 200);
+        console.log(data)
+      });
+      
+    }
+
+    const asignarCliente = (item)=>{
+      setData({...data , codigoCliente: item.cardcode , nombreCliente: item.cardname})
+      toast.success(<div>{'cliente asignado'} <br /> {item.cardname} </div> , {autoClose:700})
+    }
+    const updateData = e => {
+      setData({
+          ...data,
+          [e.target.name]: e.target.value
+      })
+    }
 
     ///////////////////////////////////////////////////////////////////////////
     /// NUEVO EVENTO 
     ///////////////////////////////////////////////////////////////////////////
     const handleDateClick = (arg) => { 
+      listaVehiculos()
+      talleres()
       //console.log(' events ', calendarRef.current.props.events )
-
+      setData({...data, fechai: arg.dateStr , fechaf: arg.dateStr})
       let eventos = []
       if(localStorage.hasOwnProperty('addEvent')){
         eventos = JSON.parse( localStorage.getItem('addEvent'))
@@ -199,7 +295,6 @@ function Calendar() {
       setAgenda({dateStr: arg.dateStr , tipoEvento: 'ins'}) //tomar los datos de la agenda
       toggle() // abrir modal 
 
-
     }
 
     //////////////////////////////////
@@ -208,6 +303,7 @@ function Calendar() {
       console.log(info)
       //alert(info.event.title)
       setAgenda({dateStr: info.event.startStr, tipoEvento: 'upd' , title: info.event.title })
+      
       toggle()
     }
 
@@ -236,7 +332,6 @@ function Calendar() {
         titleAnterior: event.oldEvent.title,
         vehiculos: event.oldEvent.extendedProps.vehiculos
       }
-      //console.log('evento corto modificado' , changeEvent)
 
       let list = evento.filter(item => item.fecha !== changeEvent.fecha && item.title !== changeEvent.title ) // quitamos de la lista para actualizar el nuevo evento 
       list.push({title: changeEvent.title, date: changeEvent.fecha , start: moment(changeEvent.start).format('YYYY-MM-DD') , end: moment(changeEvent.end).format('YYYY-MM-DD'), fecha: changeEvent.fecha, vehiculos: changeEvent.vehiculos }) // luego agregamos el nuevo evento
@@ -245,25 +340,73 @@ function Calendar() {
 
     }
 
+    const crearEvento = async()=>{
 
-    const crearEvento = ()=>{
-      if(asignados.length === 0 ){ 
-        Swal.fire({ title:'Debe seleccionar un vehiculo para agendar ', icon: 'warning'})
+      if(asignados.length === 0 ){ //controlamos si agrego vehiculo.
+        Swal.fire({ title:'Debe seleccionar un vehiculo para agendar  o falta agregar cliente !', icon: 'warning'})
+        return 
+      }else if(( Object.values(data).map(item => !item).find(item => item === true ) || false )) { //controlamos si asigno cliente 
+        Swal.fire({ title:'Debe completar datos de cliente y taller !!', icon: 'warning'})
         return 
       }
 
+      const agenda = {
+                      cab : {
+                        codigo_cliente: data.codigoCliente,
+                        nombre_cliente: data.nombreCliente,
+                        titulo: data.nombreCliente,
+                        id_estado: 21, //agendado
+                        id_taller: data.taller,
+                        fecha: moment(data.fechai).format('YYYY-MM-DD'),
+                        fechai: moment(data.fechai).format('YYYY-MM-DD'),
+                        fechaf: moment(data.fechaf).format('YYYY-MM-DD'),
+                        estado: 'Agendado',
+                        user_ins: 'admin'
+                      },
+                      det : {
+                          id_cab: 0, 
+                          nombre: asignados[0].modelo,
+                          id_vehiculo: asignados[0].id,
+                          estado: 'Agendado',
+                          user_ins : 'admin'
+                      }
+                    }  
+      Swal.showLoading()
+      await fetch('api/calendar', {
+        method: "POST",
+        body: JSON.stringify(agenda),
+        headers: {"Content-type": "application/json; charset=UTF-8"}
+      })
+      .then(response => response.json()) 
+      .then(json => {
+        Swal.close()
+        console.log(json)
+        alert(JSON.stringify(json))
+
+        setAsignados([]) // limpiamos lista de vehiculos 
+        setData(dataInterface) //limpiamos los datos de la agenda
+        setListaCliente([]) //limpiamos el buscador
+        toggle() //cerramos el modal de la agendamiento.        
+
+
+      })
+      .catch(err => console.log(err))
+
+
+      /*
       //AGREGANDO NUEVO EVENTO - AVISAR A LOS DEMAS DEL NUEVO REGISTRO 
       let newEvent = {title: clienteRef.current.value , date: agenda.dateStr , fecha: agenda.dateStr , start: agenda.dateStr , end: agenda.dateStr , vehiculos : asignados } 
       let dato= baseDatos 
-      dato.push(newEvent)
+      dato.push(newEvent) 
       setBaseDatos(dato) 
       setEvento( [...evento, newEvent ]) 
       setAsignados([]) 
-      console.log(baseDatos)
+      console.log(baseDatos) 
       localStorage.setItem('eventos', JSON.stringify(baseDatos) ) 
       socket.emit("addedEvent", JSON.stringify( newEvent )) 
       toggle() 
-
+      */
+      
     } 
 
     const cancelarEvento = ()=>{
@@ -371,62 +514,52 @@ function Calendar() {
                       <Step label="Recibido" />
                     </Stepper>                  
 
-                    <form  className="">
+                    <form onSubmit={e => e.preventDefault} className="">
                       <div className='row'>
                         <div className='col-6'>
                           <div className="mb-3">
                             <label htmlFor="uname" className="form-label">Fecha inicio:</label>
-                            <input type="date" className="form-control" id="uname" placeholder="Enter username" name="uname" required value={agenda?.dateStr} ref={fechaIRef}  />
+                            <input type="date" className="form-control" id="uname" placeholder="Enter username" name="fechai" required value={(data.fechai.length > 0)?data.fechai:agenda.dateStr} ref={fechaIRef} onChange={updateData} />
                           </div>
                         </div>
                         <div className='col-6'>
                           <div className="mb-3">
                             <label htmlFor="pwd" className="form-label">Fecha Fin:</label>
-                            <input type="date" className="form-control" id="pwd" placeholder="Enter password" name="pswd" required value={agenda?.dateStr} ref={fechaFRef}/>
+                            <input type="date" className="form-control" id="pwd" placeholder="Enter password" name="fechaf" required value={(data.fechaf.length > 0)?data.fechaf:agenda.dateStr} ref={fechaFRef} onChange={updateData }/>
                           </div>
                         </div>
                       </div>
 
                       <div className="row">
                         <div className="btn-group" style={{ marginBottom: 10,}}>
-                          <button type="button" className="btn btn-primary" onClick={()=> fechaFRef.current.value = moment(agenda?.dateStr).add(1, 'd').format('YYYY-MM-DD')  } >1 Dia</button>
-                          <button type="button" className="btn btn-warning" onClick={()=> fechaFRef.current.value = moment(agenda?.dateStr).add(2, 'd').format('YYYY-MM-DD') } >2 Dias</button>
-                          <button type="button" className="btn btn-info"    onClick={()=> fechaFRef.current.value = moment(agenda?.dateStr).add(3, 'd').format('YYYY-MM-DD') } >3 Dias</button>
-                          <button type="button" className="btn btn-danger"  onClick={()=> fechaFRef.current.value = moment(agenda?.dateStr).add(4, 'd').format('YYYY-MM-DD') } >4 Dia</button>
-                          <button type="button" className="btn btn-dark"    onClick={()=> fechaFRef.current.value = moment(agenda?.dateStr).add(5, 'd').format('YYYY-MM-DD') } >5 Dias</button>
+                          <button type="button" className="btn btn-primary" onClick={()=> setData({...data, ['fechaf']:fechaFRef.current.value = moment(agenda?.dateStr).add(1, 'd').format('YYYY-MM-DD')})  } >1 Dia</button>
+                          <button type="button" className="btn btn-warning" onClick={()=> setData({...data, ['fechaf']:fechaFRef.current.value = moment(agenda?.dateStr).add(2, 'd').format('YYYY-MM-DD')}) } >2 Dias</button>
+                          <button type="button" className="btn btn-info"    onClick={()=> setData({...data, ['fechaf']:fechaFRef.current.value = moment(agenda?.dateStr).add(3, 'd').format('YYYY-MM-DD')}) } >3 Dias</button>
+                          <button type="button" className="btn btn-danger"  onClick={()=> setData({...data, ['fechaf']:fechaFRef.current.value = moment(agenda?.dateStr).add(4, 'd').format('YYYY-MM-DD')}) } >4 Dia</button>
+                          <button type="button" className="btn btn-dark"    onClick={()=> setData({...data, ['fechaf']:fechaFRef.current.value = moment(agenda?.dateStr).add(5, 'd').format('YYYY-MM-DD')}) } >5 Dias</button>
                         </div>              
                       </div>
                       <div className='row'>
-                          <div className="input-group mt-3 mb-3">                          
-                            <button className="btn btn-primary dropdown-toggle" onClick={()=> setShowCliente( !showCliente ) }data-bs-toggle="dropdown"  type="btn"> <b> <i class="bi bi-search"></i> </b> </button>
-                            <ul class={`dropdown-menu ${(showCliente)? 'show':''}`}  style={{top: '40px', width: '96%'}}>
-                              <li>
-                                  <h5 className="text-center">LISTA DE CLIENTES</h5>
-                                  <form style={{marginLeft:'5px' , marginRight:'5px'}}>
-                                    <div className="input-group">
-                                      <button className="btn btn-secondary " type="btn" onClick={buscarCliente}>Buscar</button>
-                                      <input type="text" className="form-control" placeholder="codigo cliente..." required id="buscarCliente" name="buscarCliente"/>
-                                    </div>
-                                  </form>
-                                  <hr></hr>
-                                  <table class="table table-hover" style={{marginLeft: '10px', marginRight: '3px', minHeight: '200px'}}>
-                                    <thead >
-                                      <th>codigo</th>
-                                      <th>cliente</th>
-                                      <th className='text-center'>#</th>
-                                    </thead>
-                                    <tbody>
-                                      <td style={{width:'20%'}}>c123456</td>
-                                      <td>javier gonzalez</td>
-                                      <td style={{width:'20%'}}><span class="badge bg-secondary elevation-1 " style={{cursor:'pointer'}}>Asignar cliente</span></td>
-                                    </tbody>
-                                  </table>
-                              </li>
-                            </ul>                            
-
-                            <input type="text" className="form-control" placeholder="codigo cliente..." required id="codigoCliente" name="nombrecliente" readOnly/>
-                            <input type="text" className="form-control" id="nombreCliente" placeholder="Nombre de Cliente" name="nombreCliente" defaultValue={''} ref={clienteRef} value={agenda?.title} style={{width:'35%'}} readOnly/>
+                          <div className="input-group mt-3 mb-3"> 
+                          <span className="btn btn-primary " onClick={ buscarCliente } data-bs-toggle="dropdown" > <b> <i class="bi bi-search"></i> </b> </span>
+                            <input type="text" className="form-control" placeholder="codigo cliente..." name="codigoCliente" ref={codigoCliRef} onChange={ updateData } value={data?.codigoCliente} readOnly/>
+                            <input type="text" className="form-control" id="nombreCliente" placeholder="Nombre de Cliente" name="nombreCliente" ref={nombreCliRef} style={{width:'35%'}} onChange={ updateData } value={data?.nombreCliente} readOnly/>
                           </div>
+
+                          <div className="input-group mt-3 mb-3"> 
+                          <select class="form-select" aria-label="Default select example" name="taller" onChange={ updateData }  value={data?.taller}  >
+                            <option selected>Taller ?</option>
+                            { 
+                              taller?.map(item =>{
+                                return (
+                                  <option key={item.id} value={item.id}> {item.nombre} </option>
+                                )
+                              })
+                            }
+                            
+                          </select>
+                          </div>
+
                         </div>
 
                     </form>
@@ -485,6 +618,53 @@ function Calendar() {
                   </div>
                 </div>
               </div>
+
+
+
+
+              <Buscador open={abrirBuscador} setOpen={setAbrirBuscador} titulo ={titulo}  >
+                <div className="container">
+                      <div className="row">
+                        <form onSubmit={recuperarCliente}>
+                            <div className="input-group mt-3 mb-3"> 
+                              <button className="btn btn-primary "  type="btn" > <b> <i class="bi bi-search"></i> </b> </button>
+                              <input type="text" className="form-control" name="buscar" ref={buscarRef} /> 
+                            </div>
+                        </form>
+                      </div>
+                      <div className="row">
+                          <table className="table table-sm table-hover " style={{fontSize:'14px'}}>
+                              <thead>
+                                  <tr>
+                                    <th>#</th>
+                                    <th>codigo</th>
+                                    <th>nombre</th>
+                                    <th>Asignar</th>
+                                  </tr>
+                              </thead> 
+                              <tbody>
+                                { 
+                                  listaCliente.map((item, index)=>{
+                                    return (
+                                      <tr key={item.cardcode}>
+                                        <td>{index + 1}</td>
+                                        <td style={{width:'20%'}}>{item.cardcode}</td>
+                                        <td>{item.cardname}</td>
+                                        <td style={{width:'20%'}}><span className="badge bg-secondary elevation-1 " style={{cursor:'pointer'}} onClick={()=>{ asignarCliente(item) }}>Asignar cliente</span></td>
+                                      </tr>
+                                    )
+                                  })
+                                }
+
+                              </tbody>
+                          </table>
+                      </div>
+                  </div>
+
+              </Buscador>
+
+
+
             </ModalBody>
             <ModalFooter>
                {

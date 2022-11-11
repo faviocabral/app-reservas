@@ -7,7 +7,7 @@ const conn1 = require('knex')({
 	  port : 3306,
 	  user : 'root',	
 	  password : '',
-	  database : 'cobros'
+	  database : 'agenda_renting'
 	}
   });
 
@@ -18,7 +18,7 @@ const conn2 = require('knex')({
 	  //port : 3306,
 	  user : 'sa',
 	  password : 'Sqlservices*',
-	  database : 'gardenkia'
+	  database : 'control'
 	}
   });
 

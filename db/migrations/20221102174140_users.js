@@ -24,6 +24,7 @@
       .createTable('agendarenting_usuarios',(table)=>{
         table.increments()
         table.string('nombre').notNullable()
+        table.string('user').notNullable()
         table.string('estado')
         table.integer('id_tipo_usuario').unsigned().references('id').inTable('agendarenting_tipo_usuarios')
         table.string('password').notNullable()
@@ -65,6 +66,7 @@
         table.string('estado')
         table.string('vin').notNullable()
         table.string('chapa').notNullable()
+        table.integer('anho').notNullable()
         table.integer('id_marca').unsigned().references('id').inTable('agendarenting_marcas')
         table.integer('id_modelo').unsigned().references('id').inTable('agendarenting_modelos')
         table.integer('id_taller').unsigned().references('id').inTable('agendarenting_talleres')
@@ -80,6 +82,8 @@
         table.string('titulo')
         table.integer('id_estado').unsigned().references('id').inTable('agendarenting_estados')
         table.integer('id_taller').unsigned().references('id').inTable('agendarenting_talleres')
+        table.date('fechai')
+        table.date('fechaf')
         table.string('estado')
         table.timestamp('fecha_ins').defaultTo(knex.fn.now())
         table.timestamp('fecha_upd').defaultTo(knex.fn.now())
@@ -88,6 +92,7 @@
       })
       .createTable('agendarenting_detalles', (table)=>{
         table.increments()
+        table.integer('id_cab').unsigned().references('id').inTable('agendarenting_agenda')
         table.string('nombre')
         table.integer('id_vehiculo').unsigned().references('id').inTable('agendarenting_vehiculos')
         table.string('estado')
