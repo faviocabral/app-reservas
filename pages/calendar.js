@@ -53,6 +53,7 @@ function Calendar() {
 
   //VEHICULOS ASIGNADOS 
   const [asignados, setAsignados] = useState([])
+  const [listaAsignados , setListaAsignados] = useState([])
   const [updEvent, setUpdEvent] = useState([])
   const calendarRef = createRef()
   const [modal, setModal] = useState('')
@@ -139,11 +140,11 @@ function Calendar() {
       if(!localStorage.hasOwnProperty('eventos')){
         localStorage.setItem("eventos", "[]")
       }  
-      let base = JSON.parse( localStorage.getItem('eventos'))
-      setBaseDatos( base )  
+      let base = JSON.parse( localStorage.getItem('eventos' ))
+      setBaseDatos( base )
       let misAgendas =[] 
-      evento.forEach(item => misAgendas.push(item))
-      base.forEach(item => misAgendas.push(item) )
+      evento.forEach(item => misAgendas.push(item ))
+      base.forEach(item   => misAgendas.push(item ))
       setEvento(misAgendas)
       //setEvento([...evento, item ])
     }
@@ -151,6 +152,7 @@ function Calendar() {
     listaVehiculos()
     talleres()
     listaAgenda()
+
   }, []);
 
 
@@ -212,6 +214,7 @@ function Calendar() {
               })
             })
             setEvento(lista)
+            setBaseDatos(lista)
           })
        
       })
@@ -236,7 +239,7 @@ function Calendar() {
       .then(response => response.json()) 
       .then(json => {
         console.log(json)
-        setAsignados(json.rows)
+        setListaAsignados(json.rows)
       })
       .catch(err => console.log(err))
 
@@ -285,8 +288,10 @@ function Calendar() {
       listaVehiculos()
       talleres()
       asignadosxFecha(arg.dateStr)
+      setAsignados([])
+      setData(dataInterface)
       //console.log(' events ', calendarRef.current.props.events )
-      setData({...data, fechai: arg.dateStr , fechaf: arg.dateStr})
+      //setData({...data, fechai: arg.dateStr , fechaf: arg.dateStr})
       let eventos = []
       if(localStorage.hasOwnProperty('addEvent')){
         eventos = JSON.parse( localStorage.getItem('addEvent'))
@@ -411,7 +416,6 @@ function Calendar() {
         setListaCliente([]) //limpiamos el buscador
         toggle() //cerramos el modal de la agendamiento.        
 
-
       })
       .catch(err => console.log(err))
 
@@ -489,14 +493,14 @@ function Calendar() {
                             return (
                                 <tr className={ `align-middle ${
                                   (agenda?.tipoEvento === 'upd')
-                                  ?(baseDatos?.find(item2 => item2.fecha  === agenda?.dateStr &&  item2.title === agenda.title )?.vehiculos?.findIndex(item3 => item3.vin === item.vin) >= 0 )
+                                  ?(asignados.findIndex(item2 => item2.vin === item.vin ) >= 0 )
                                     ?'bg-success text-white'
                                     : ''
-                                  :(baseDatos?.filter(item2 => item2.fecha === agenda?.dateStr )?.map(item => item.vehiculos )?.flat().findIndex(item3 => item3.vin === item.vin) >= 0 )
-                                    ? 'bg-success text-white'
-                                    :(asignados.findIndex(item2 => item2.vin === item.vin ) >= 0 )
-                                      ? 'bg-warning' 
-                                      :'' 
+                                  :(asignados.findIndex(item2 => item2.vin === item.vin ) >= 0 )
+                                    ? 'bg-warning' 
+                                    : (listaAsignados.findIndex(item3 => item3.vin === item.vin && moment(agenda?.dateStr) <= moment(item3.fechaf) ) >= 0 )
+                                      ? 'bg-success text-white'
+                                      : ''
                                   }` } key={item.vin} >
                                 
                                   <th>{index + 1}</th>
@@ -508,7 +512,7 @@ function Calendar() {
                                   <td style={{paddingRight: '0px', textAlign:'right'}}>
                                       {
                                         (agenda?.tipoEvento === 'upd')
-                                        ?(baseDatos?.find(item2 => item2.fecha  === agenda?.dateStr &&  item2.title === agenda.title )?.vehiculos?.findIndex(item3 => item3.vin === item.vin) >= 0 )
+                                        ?(asignados.findIndex(item2 => item2.vin === item.vin ) >= 0 )
                                           ?<span><i className="bi bi-check-lg" style={{fontSize:'24px', position:'relative', left:'-10px'}} ></i></span>
                                           : <span></span>
                                         :(baseDatos.filter(item2 => item2.fecha === agenda?.dateStr )?.map(item => item.vehiculos )?.flat().findIndex(item3 => item3.vin === item.vin) >= 0 )
@@ -516,9 +520,10 @@ function Calendar() {
                                           : (asignados.findIndex(item2 => item2.vin === item.vin ) >= 0 )
                                             ?<span></span>
                                             :(agenda.tipoEvento === 'ins')
-                                              ?<i className="bi bi-arrow-right btn btn-warning font-weight-bold px-2 py-0 " style={{fontSize:'20px'}} onClick={()=> asignarVehiculo(item.vin) }></i> 
+                                              ?(listaAsignados.findIndex(item3 => item3.vin === item.vin ) >= 0 )
+                                                ?<span><i className="bi bi-check-lg" style={{fontSize:'24px', position:'relative', left:'-10px'}} ></i></span>
+                                                :<i className="bi bi-arrow-right btn btn-warning font-weight-bold px-2 py-0 " style={{fontSize:'20px'}} onClick={()=> asignarVehiculo(item.vin) }></i> 
                                               :<span></span>
-                                            
                                       }
                                   </td>
                                 </tr>
@@ -602,22 +607,10 @@ function Calendar() {
                           </tr>
                         </thead>
                         <tbody>
-                            {
-                              (baseDatos.findIndex(item2 => item2.fecha === agenda?.dateStr && agenda?.tipoEvento === 'upd' ) >= 0 )
-                              ? baseDatos.find(item2 => item2.fecha === agenda?.dateStr && item2.title === agenda?.title )?.vehiculos.map((item, index)=>{
-                                  return (
-                                    <tr className='align-middle' key={item.vin}>
-                                    <th>{index + 1}</th>
-                                    <td>{item.marca}</td>
-                                    <td>{item.modelo}</td>
-                                    <td>{item.chapa}</td>
-                                    <td>{item.anho}</td>
-                                    <td>{item.vin}</td>
-                                    <td style={{paddingRight:'0px', textAlign:'right'}}>  </td>
-                                  </tr>
-                                  )
-                                })
-                              :(asignados.length > 0 )
+                            { 
+                              
+
+                              (asignados.length > 0 )
                                 ? asignados.map((item, index )=>{
                                     return (
                                         <tr className='align-middle' key={item.vin}>
@@ -627,7 +620,11 @@ function Calendar() {
                                           <td>{item.chapa}</td>
                                           <td>{item.anho}</td>
                                           <td>{item.vin}</td>
-                                          <td style={{paddingRight:'0px', textAlign:'right'}}>  <i className="bi bi-x-lg btn btn-danger font-weight-bold px-2 py-0 " style={{fontSize:'20px'}} onClick={()=> eliminarAsignacion(item.vin)}  ></i> </td>
+                                          {
+                                            (agenda?.tipoEvento === 'upd' )
+                                            ? <td></td>
+                                            : <td style={{paddingRight:'0px', textAlign:'right'}}>  <i className="bi bi-x-lg btn btn-danger font-weight-bold px-2 py-0 " style={{fontSize:'20px'}} onClick={()=> eliminarAsignacion(item.vin)}  ></i> </td>
+                                          }
                                         </tr>
                                     )
                                   })

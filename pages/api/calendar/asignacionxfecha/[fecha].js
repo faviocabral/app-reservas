@@ -8,7 +8,12 @@ export default async function  handler(req , res ){
                 const fecha = req.query.fecha 
                 await conn1.select()
                 .from('v_asignadosxfecha')
-                .where('fecha', fecha)
+                .where('fechaf','>', fecha)
+                .andWhere('fechai','<=', fecha)
+                .orWhere({
+                    fechai : fecha , 
+                    fechaf: fecha 
+                })
                 .then(async (rows)=>{
                     res.status(200).json({ rows })
                 })
