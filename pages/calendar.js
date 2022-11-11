@@ -79,7 +79,7 @@ function Calendar() {
   ////////////////////////////////
   // SETEOS INICIALES DEL CALENDARIO
   ////////////////////////////////
-  useEffect(() => { 
+  useEffect( () => { 
 
     socket.on('connect', () => {
       console.log('connected' , socket.id)
@@ -148,11 +148,9 @@ function Calendar() {
       //setEvento([...evento, item ])
     }
 
-    //buscar los talleres 
-    talleres()
     listaVehiculos()
+    talleres()
     listaAgenda()
-
   }, []);
 
 
@@ -198,19 +196,23 @@ function Calendar() {
     const listaAgenda= async () =>{
       await fetch('api/calendar' )
       .then(response => response.json()) 
-      .then(json => {
-        let lista = json.agenda.map(item => {  
-          return({...item,
-            date: item.fecha,
-            start: item.fechai,
-            end: item.fechaf,
-            title: item.titulo,
-            vehiculos: vehiculos.filter(item2 => item.det.map(item3 => item3.vin ).includes(item2.vin) )
-          })
+      .then( async(json) => {
 
-        })
-        setEvento(lista)
-        alert(JSON.stringify(lista))
+        await fetch('api/vehiculos')  
+          .then(response => response.json()) 
+          .then( async( vhe ) => {
+
+            let lista = json.agenda.map(item => {  
+              return({...item,
+                date: item.fecha,
+                start: item.fechai,
+                end: item.fechaf,
+                title: item.titulo,
+                vehiculos: vhe.rows.filter(item2 => item.det.map(item3 => item3.vin ).includes(item2.vin) )
+              })
+            })
+            setEvento(lista)
+          })
        
       })
       .catch(err => console.log(err))      
@@ -228,6 +230,17 @@ function Calendar() {
       
     }
 
+    const asignadosxFecha = async(fecha)=>{
+
+      await fetch(`api/calendar/asignacionxfecha/${fecha}` )
+      .then(response => response.json()) 
+      .then(json => {
+        console.log(json)
+        setAsignados(json.rows)
+      })
+      .catch(err => console.log(err))
+
+    }
 
     const buscarCliente = async(e)=>{ 
       setAbrirBuscador('show')
@@ -271,6 +284,7 @@ function Calendar() {
     const handleDateClick = (arg) => { 
       listaVehiculos()
       talleres()
+      asignadosxFecha(arg.dateStr)
       //console.log(' events ', calendarRef.current.props.events )
       setData({...data, fechai: arg.dateStr , fechaf: arg.dateStr})
       let eventos = []
@@ -303,7 +317,16 @@ function Calendar() {
       console.log(info)
       //alert(info.event.title)
       setAgenda({dateStr: info.event.startStr, tipoEvento: 'upd' , title: info.event.title })
-      
+      let myEvent = {
+        fechai: moment(info.event.extendedProps.fechai).format('YYYY-MM-DD'), 
+        fechaf:moment(info.event.extendedProps.fechaf).format('YYYY-MM-DD'), 
+        codigoCliente: info.event.extendedProps.codigo_cliente, 
+        nombreCliente: info.event.extendedProps.nombre_cliente, 
+        taller: info.event.extendedProps.id_taller
+      }
+      ///info.event.extendedProps.
+      setData(myEvent)
+      setAsignados(info.event.extendedProps.vehiculos)
       toggle()
     }
 
