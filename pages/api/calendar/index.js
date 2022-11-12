@@ -37,10 +37,11 @@ export default async function  handler(req , res ){
                   .then(async (id)=> {
                     
                     //insertar detalle vehiculos 
-                    agenda.det.id_cab = id 
+                    // agenda.det.id_cab = id 
+                    agenda.det.forEach(item => item.id_cab = id )
                     await conn1.insert(agenda.det)
                       .into('agendarenting_detalles')
-                      .then((id)=> {
+                      .then((id2)=> {
                         // use id here
                         return res.status(200).json({message:' datos insertados correctamente !!!'})
                       });
@@ -56,21 +57,5 @@ export default async function  handler(req , res ){
         default:
             return res.status(405).json({message:' metodo no valido !!!'})
     }
-/*
-    //await conn('datos_profesiones_insert')
-    try {
-        await knex('agendarenting_talleres')
-        .select()
-        .then((rows)=>{
-                ///let lista = rows.map(item => Object.values(item))
-            res.status(200).json({
-                rows
-            });
-        })
-            
-    } catch (error) {
-        res.status(500).json({ error: error.message }); 
-    }
-*/
 
 }

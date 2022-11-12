@@ -21,36 +21,30 @@ export default function Login() {
 
 
   return (
-    <div className="container" style={{marginTop:'50px'}}>
+    <div className="container" style={{marginTop:'100px', maxWidth:'40%'}}>
 
       <div className="login-box mx-auto my-auto elevation-1">
         <div className="card card-outline card-primary">
           <div className="card-header text-center">
-            <a href="" className="h1"><b>AGENDA RENTING</b></a>
+            <a href="" className="h2"><b>AGENDA RENTING</b></a>
           </div>
           <div className="card-body">
             <p className="login-box-msg"><b>INICIO SESION</b> </p>
             <form method="post">
               <div className="input-group mb-3">
                 <input type="email" className="form-control" placeholder="Usuario" />
-                <div className="input-group-append">
                   <div className="input-group-text">
-                    <span className="fas fa-envelope" />
+                  <i class="bi bi-person-fill"></i>
                   </div>
-                </div>
               </div>
               <div className="input-group mb-3">
                 <input type="password" className="form-control" placeholder="Contraseña" />
-                <div className="input-group-append">
                   <div className="input-group-text">
-                    <span className="fas fa-lock" />
+                  <i class="bi bi-lock-fill"></i>
                   </div>
-                </div>
               </div>
               <div className="row">
-                <div className="col-8">
-                </div>
-                <div className="col-4">
+                <div className="col d-flex justify-content-end ">
                   <button type="submit" className="btn btn-primary btn-block" onClick={login}><b>Login</b></button>
                 </div>
               </div>

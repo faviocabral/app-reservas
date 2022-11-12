@@ -151,10 +151,9 @@ function Calendar() {
 
     listaVehiculos()
     talleres()
-    listaAgenda()
+    listaAgenda( moment().format('YYYY-MM') )
 
   }, []);
-
 
   const viewConfig =  {
       dayGridMonth: {
@@ -195,11 +194,11 @@ function Calendar() {
       .catch(err => console.log(err))      
     }
 
-    const listaAgenda= async () =>{
-      await fetch('api/calendar' )
+    const listaAgenda= async (periodo) =>{
+      await fetch(`api/calendar/periodo/${periodo}` )
       .then(response => response.json()) 
       .then( async(json) => {
-
+          alert(JSON.stringify(json))
         await fetch('api/vehiculos')  
           .then(response => response.json()) 
           .then( async( vhe ) => {
@@ -289,8 +288,9 @@ function Calendar() {
       talleres()
       asignadosxFecha(arg.dateStr)
       setAsignados([])
+      dataInterface.fechai = arg.dateStr
+      dataInterface.fechaf = arg.dateStr
       setData(dataInterface)
-      //console.log(' events ', calendarRef.current.props.events )
       //setData({...data, fechai: arg.dateStr , fechaf: arg.dateStr})
       let eventos = []
       if(localStorage.hasOwnProperty('addEvent')){
@@ -312,12 +312,13 @@ function Calendar() {
       ///////////////////////////////////////////////
       //ABRIR EL MODAL PARA REGISTRAR LOS DATOS
       setAgenda({dateStr: arg.dateStr , tipoEvento: 'ins'}) //tomar los datos de la agenda
-      toggle() // abrir modal 
+        toggle() // abrir modal 
 
     }
 
-    //////////////////////////////////
+    ////////////////////////////////////////////////////////////////////
     // PARA VER DATOS DEL EVENTO
+    ////////////////////////////////////////////////////////////////////
     const handleEventClick = (info) => { 
       console.log(info)
       //alert(info.event.title)
@@ -347,8 +348,9 @@ function Calendar() {
       console.log('se agrego un nuevo evento ',event)
     }
 
-    ////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////
     // SE EJECUTA CUANDO HUBO ALGUN CAMBIO EN ALGUN EVENTO LOCAL
+    ////////////////////////////////////////////////////////////////////
     const handleChange = (event) =>{
       let changeEvent = {
         title : event.event.title,
@@ -374,10 +376,9 @@ function Calendar() {
         Swal.fire({ title:'Debe seleccionar un vehiculo para agendar  o falta agregar cliente !', icon: 'warning'})
         return 
       }else if(( Object.values(data).map(item => !item).find(item => item === true ) || false )) { //controlamos si asigno cliente 
-        Swal.fire({ title:'Debe completar datos de cliente y taller !!', icon: 'warning'})
+        Swal.fire({ title:'Debe completar datos de cliente y taller !!' , icon: 'warning'})
         return 
       }
-
       const agenda = {
                       cab : {
                         codigo_cliente: data.codigoCliente,
@@ -391,13 +392,17 @@ function Calendar() {
                         estado: 'Agendado',
                         user_ins: 'admin'
                       },
-                      det : {
-                          id_cab: 0, 
-                          nombre: asignados[0].modelo,
-                          id_vehiculo: asignados[0].id,
-                          estado: 'Agendado',
-                          user_ins : 'admin'
-                      }
+                      det : asignados.map(item=>{
+                        return (
+                          {
+                            id_cab: 0, 
+                            nombre: item.modelo,
+                            id_vehiculo: item.id,
+                            estado: 'Agendado',
+                            user_ins : 'admin'
+                          }
+                        )
+                      })
                     }  
       Swal.showLoading()
       await fetch('api/calendar', {
@@ -408,32 +413,17 @@ function Calendar() {
       .then(response => response.json()) 
       .then(json => {
         Swal.close()
-        console.log(json)
         alert(JSON.stringify(json))
 
         setAsignados([]) // limpiamos lista de vehiculos 
         setData(dataInterface) //limpiamos los datos de la agenda
         setListaCliente([]) //limpiamos el buscador
-        toggle() //cerramos el modal de la agendamiento.        
+        toggle() //cerramos el modal de la agendamiento.
+        listaAgenda( moment().format('YYYY-MM') )
 
       })
       .catch(err => console.log(err))
 
-
-      /*
-      //AGREGANDO NUEVO EVENTO - AVISAR A LOS DEMAS DEL NUEVO REGISTRO 
-      let newEvent = {title: clienteRef.current.value , date: agenda.dateStr , fecha: agenda.dateStr , start: agenda.dateStr , end: agenda.dateStr , vehiculos : asignados } 
-      let dato= baseDatos 
-      dato.push(newEvent) 
-      setBaseDatos(dato) 
-      setEvento( [...evento, newEvent ]) 
-      setAsignados([]) 
-      console.log(baseDatos) 
-      localStorage.setItem('eventos', JSON.stringify(baseDatos) ) 
-      socket.emit("addedEvent", JSON.stringify( newEvent )) 
-      toggle() 
-      */
-      
     } 
 
     const cancelarEvento = ()=>{
@@ -441,6 +431,7 @@ function Calendar() {
       //SE CANCELO EL EVENTO
       socket.emit("cancelEvent", JSON.stringify({title: 'el usuario '+ socket.id+' cancelo un evento ', date: agenda.dateStr , fecha: agenda.dateStr }))
       setAgenda({})
+      setListaAsignados([])
       toggle()
     }
 
