@@ -198,7 +198,6 @@ function Calendar() {
       await fetch(`api/calendar/periodo/${periodo}` )
       .then(response => response.json()) 
       .then( async(json) => {
-          alert(JSON.stringify(json))
         await fetch('api/vehiculos')  
           .then(response => response.json()) 
           .then( async( vhe ) => {
@@ -217,7 +216,7 @@ function Calendar() {
           })
        
       })
-      .catch(err => console.log(err))      
+      .catch(err => console.log(err))
 
     }
 
@@ -535,18 +534,32 @@ function Calendar() {
 
                     <form onSubmit={e => e.preventDefault} className="">
                       <div className='row'>
-                        <div className='col-6'>
+
+                        <div className='col-4'>
                           <div className="mb-3">
                             <label htmlFor="uname" className="form-label">Fecha inicio:</label>
                             <input type="date" className="form-control" id="uname" placeholder="Enter username" name="fechai" required value={(data.fechai.length > 0)?data.fechai:agenda.dateStr} ref={fechaIRef} onChange={updateData} />
                           </div>
                         </div>
-                        <div className='col-6'>
+
+                        <div className='col-4'>
                           <div className="mb-3">
                             <label htmlFor="pwd" className="form-label">Fecha Fin:</label>
-                            <input type="date" className="form-control" id="pwd" placeholder="Enter password" name="fechaf" required value={(data.fechaf.length > 0)?data.fechaf:agenda.dateStr} ref={fechaFRef} onChange={updateData }/>
+                            <input type="date" className="form-control" id="pwd" placeholder="Enter password" name="fechaf" required value={(data.fechaf.length > 0)?data.fechaf:agenda.dateStr} ref={fechaFRef} onChange={updateData } />
                           </div>
                         </div>
+
+                        <div className="col-4 d-flex justify-content-center mb-1">
+                          <div className="card w-50"  >
+                              <div className="card-body p-0 m-0 bg-primary text-white rounded-top ">
+                                <h3 className="text-center p-0 m-0"><strong>Dias</strong></h3>
+                              </div>
+                            <div className="card-footer p-1 ">
+                              <p className="card-title text-center mb-0"><strong> <h3 className="m-0"><strong>{moment(data.fechaf).diff(data.fechai , 'days') }</strong></h3> </strong></p>
+                            </div>
+                          </div>
+                        </div>
+
                       </div>
 
                       <div className="row">
