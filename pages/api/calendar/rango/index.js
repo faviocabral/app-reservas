@@ -6,10 +6,13 @@ export default async function  handler(req , res ){
     switch (req.method) {
         case 'GET':
             try {
-                const periodo = req.query.periodo 
+                const fechai = req.query.fechai
+                const fechaf = req.query.fechaf
+                
                 await conn1.select()
                 .from('v_agendas')
-                .where('periodo', periodo)
+                .where('fechai', '>=', fechai)
+                .andWhere('fechaf', '<=', fechaf)
                 .then(async (rows)=>{
                     await conn1.select()
                     .from('v_detalles')
@@ -26,8 +29,9 @@ export default async function  handler(req , res ){
                         res.status(200).json({ agenda })
                     })
                 })
-                .catch(err => res.status(500).json({message: 'hubo un error en la consulta ' + err }))                
-
+                .catch(err => res.status(500).json({message: 'hubo un error en la consulta ' + err }))    
+                
+                
             } catch (error) {
                 return res.status(500).json({message:' hubo un error con el metodo get !!!'})
             }

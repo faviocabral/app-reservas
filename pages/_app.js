@@ -12,9 +12,10 @@ import AppContext from '../context/appContex';
 function MyApp({ Component, pageProps }) {
 
   const [usuario, setUsuario] = useState()
+  const [login, setLogin] = useState(false)
 
   return (
-    <AppContext.Provider value={{usuario , setUsuario }}>
+    <AppContext.Provider value={{usuario , setUsuario , login , setLogin }}>
       <Component {...pageProps} />
       <ToastContainer
           position="top-right"

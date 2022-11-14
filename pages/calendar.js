@@ -151,7 +151,7 @@ function Calendar() {
 
     listaVehiculos()
     talleres()
-    listaAgenda( moment().format('YYYY-MM') )
+    //listaAgenda(  )
 
   }, []);
 
@@ -161,12 +161,23 @@ function Calendar() {
       },
       timeGrid:{
         dayMaxEventRows: 3
-      }          
+      } 
   }
 
     useEffect(()=>{
         setAlto(window.innerHeight )
         window.addEventListener("resize",listen )
+
+        /* listen next and prev button 
+        setTimeout(()=>{
+          let myButton = document.getElementsByClassName('fc-next-button')[0]
+          //myButton.addEventListener("click", sapo )
+          console.log(myButton)
+          myButton.addEventListener("click", ()=>{alert(1)})
+
+        }, 2000)
+        */
+
     }, [])
 
     const listen = ()=>{
@@ -194,8 +205,8 @@ function Calendar() {
       .catch(err => console.log(err))      
     }
 
-    const listaAgenda= async (periodo) =>{
-      await fetch(`api/calendar/periodo/${periodo}` )
+    const listaAgenda= async (fechai , fechaf) =>{
+      await fetch(`api/calendar/rango?fechai=${fechai}&fechaf=${fechaf}` )
       .then(response => response.json()) 
       .then( async(json) => {
         await fetch('api/vehiculos')  
@@ -208,6 +219,10 @@ function Calendar() {
                 start: item.fechai,
                 end: item.fechaf,
                 title: item.titulo,
+                //backgroundColor: '#5cb85c',
+                //borderColor: '#5cb85c',
+                //allDay: true,
+                classNames: 'bg-gradient-success',
                 vehiculos: vhe.rows.filter(item2 => item.det.map(item3 => item3.vin ).includes(item2.vin) )
               })
             })
@@ -283,6 +298,7 @@ function Calendar() {
     /// NUEVO EVENTO 
     ///////////////////////////////////////////////////////////////////////////
     const handleDateClick = (arg) => { 
+
       listaVehiculos()
       talleres()
       asignadosxFecha(arg.dateStr)
@@ -323,6 +339,7 @@ function Calendar() {
       //alert(info.event.title)
       setAgenda({dateStr: info.event.startStr, tipoEvento: 'upd' , title: info.event.title })
       let myEvent = {
+        fecha: moment(info.event.extendedProps.fecha).format('YYYY-MM-DD'), 
         fechai: moment(info.event.extendedProps.fechai).format('YYYY-MM-DD'), 
         fechaf:moment(info.event.extendedProps.fechaf).format('YYYY-MM-DD'), 
         codigoCliente: info.event.extendedProps.codigo_cliente, 
@@ -413,12 +430,12 @@ function Calendar() {
       .then(json => {
         Swal.close()
         alert(JSON.stringify(json))
-
+        let fecha = data.fechai 
         setAsignados([]) // limpiamos lista de vehiculos 
         setData(dataInterface) //limpiamos los datos de la agenda
         setListaCliente([]) //limpiamos el buscador
         toggle() //cerramos el modal de la agendamiento.
-        listaAgenda( moment().format('YYYY-MM') )
+        listaAgenda( moment(fecha).format('YYYY-MM') )// recuperamos las agenda del mes
 
       })
       .catch(err => console.log(err))
@@ -538,24 +555,24 @@ function Calendar() {
                         <div className='col-4'>
                           <div className="mb-3">
                             <label htmlFor="uname" className="form-label">Fecha inicio:</label>
-                            <input type="date" className="form-control" id="uname" placeholder="Enter username" name="fechai" required value={(data.fechai.length > 0)?data.fechai:agenda.dateStr} ref={fechaIRef} onChange={updateData} />
+                            <input type="date" className="form-control" id="uname" placeholder="Enter username" name="fechai" required value={(data.fechai.length > 0)?data.fechai:agenda.dateStr} ref={fechaIRef} onChange={updateData} readOnly={(agenda?.tipoEvento === 'upd')?true:false }  />
                           </div>
                         </div>
 
                         <div className='col-4'>
                           <div className="mb-3">
                             <label htmlFor="pwd" className="form-label">Fecha Fin:</label>
-                            <input type="date" className="form-control" id="pwd" placeholder="Enter password" name="fechaf" required value={(data.fechaf.length > 0)?data.fechaf:agenda.dateStr} ref={fechaFRef} onChange={updateData } />
+                            <input type="date" className="form-control" id="pwd" placeholder="Enter password" name="fechaf" required value={(data.fechaf.length > 0)?data.fechaf:agenda.dateStr} ref={fechaFRef} onChange={updateData } readOnly={(agenda?.tipoEvento === 'upd')?true:false } />
                           </div>
                         </div>
 
                         <div className="col-4 d-flex justify-content-center mb-1">
                           <div className="card w-50"  >
-                              <div className="card-body p-0 m-0 bg-primary text-white rounded-top ">
+                              <div className="card-header p-0 m-0 text-bg-primary elevation-1">
                                 <h3 className="text-center p-0 m-0"><strong>Dias</strong></h3>
                               </div>
                             <div className="card-footer p-1 ">
-                              <p className="card-title text-center mb-0"><strong> <h3 className="m-0"><strong>{moment(data.fechaf).diff(data.fechai , 'days') }</strong></h3> </strong></p>
+                              <p className="card-title text-center mb-0"><strong> <h3 className="m-0"><strong>{ moment(data.fechaf).diff(data.fechai , 'days')+1 }</strong></h3> </strong></p>
                             </div>
                           </div>
                         </div>
@@ -564,22 +581,22 @@ function Calendar() {
 
                       <div className="row">
                         <div className="btn-group" style={{ marginBottom: 10,}}>
-                          <button type="button" className="btn btn-primary" onClick={()=> setData({...data, ['fechaf']:fechaFRef.current.value = moment(agenda?.dateStr).add(1, 'd').format('YYYY-MM-DD')})  } >1 Dia</button>
-                          <button type="button" className="btn btn-warning" onClick={()=> setData({...data, ['fechaf']:fechaFRef.current.value = moment(agenda?.dateStr).add(2, 'd').format('YYYY-MM-DD')}) } >2 Dias</button>
-                          <button type="button" className="btn btn-info"    onClick={()=> setData({...data, ['fechaf']:fechaFRef.current.value = moment(agenda?.dateStr).add(3, 'd').format('YYYY-MM-DD')}) } >3 Dias</button>
-                          <button type="button" className="btn btn-danger"  onClick={()=> setData({...data, ['fechaf']:fechaFRef.current.value = moment(agenda?.dateStr).add(4, 'd').format('YYYY-MM-DD')}) } >4 Dia</button>
-                          <button type="button" className="btn btn-dark"    onClick={()=> setData({...data, ['fechaf']:fechaFRef.current.value = moment(agenda?.dateStr).add(5, 'd').format('YYYY-MM-DD')}) } >5 Dias</button>
+                          <button type="button" className="btn btn-primary" onClick={()=> setData({...data, ['fechaf']:fechaFRef.current.value = moment(agenda?.dateStr).add(0, 'd').format('YYYY-MM-DD')})  } disabled={(agenda?.tipoEvento === 'upd')?true:false } >1 Dia</button>
+                          <button type="button" className="btn btn-warning" onClick={()=> setData({...data, ['fechaf']:fechaFRef.current.value = moment(agenda?.dateStr).add(1, 'd').format('YYYY-MM-DD')}) } disabled={(agenda?.tipoEvento === 'upd')?true:false } >2 Dias</button>
+                          <button type="button" className="btn btn-info"    onClick={()=> setData({...data, ['fechaf']:fechaFRef.current.value = moment(agenda?.dateStr).add(2, 'd').format('YYYY-MM-DD')}) } disabled={(agenda?.tipoEvento === 'upd')?true:false } >3 Dias</button>
+                          <button type="button" className="btn btn-danger"  onClick={()=> setData({...data, ['fechaf']:fechaFRef.current.value = moment(agenda?.dateStr).add(3, 'd').format('YYYY-MM-DD')}) } disabled={(agenda?.tipoEvento === 'upd')?true:false } >4 Dia</button>
+                          <button type="button" className="btn btn-dark"    onClick={()=> setData({...data, ['fechaf']:fechaFRef.current.value = moment(agenda?.dateStr).add(4, 'd').format('YYYY-MM-DD')}) } disabled={(agenda?.tipoEvento === 'upd')?true:false } >5 Dias</button>
                         </div>              
                       </div>
                       <div className='row'>
                           <div className="input-group mt-3 mb-3"> 
-                          <span className="btn btn-primary " onClick={ buscarCliente } data-bs-toggle="dropdown" > <b> <i class="bi bi-search"></i> </b> </span>
+                          <button className="btn btn-primary " onClick={ buscarCliente } data-bs-toggle="dropdown" disabled={(agenda?.tipoEvento === 'upd')?true:false } > <b> <i class="bi bi-search"></i> </b> </button>
                             <input type="text" className="form-control" placeholder="codigo cliente..." name="codigoCliente" ref={codigoCliRef} onChange={ updateData } value={data?.codigoCliente} readOnly/>
                             <input type="text" className="form-control" id="nombreCliente" placeholder="Nombre de Cliente" name="nombreCliente" ref={nombreCliRef} style={{width:'35%'}} onChange={ updateData } value={data?.nombreCliente} readOnly/>
                           </div>
 
                           <div className="input-group mt-3 mb-3"> 
-                          <select class="form-select" aria-label="Default select example" name="taller" onChange={ updateData }  value={data?.taller}  >
+                          <select class="form-select" aria-label="Default select example" name="taller" onChange={ updateData }  value={data?.taller} disabled={(agenda?.tipoEvento === 'upd')?true:false }>
                             <option selected>Taller ?</option>
                             { 
                               taller?.map(item =>{
@@ -740,19 +757,20 @@ function Calendar() {
             }}
           locale={'es'} 
           editable 
-          selectable
+          //selectable
           slotMinTime= {"07:30:00"}  //inicio de hora 
           slotMaxTime= {"18:00:00"} //fin de hora 
           //eventLimit={true} 
           views={viewConfig}  //configuracion de la vista 
           height={alto - 80} // alto maximo del calendario caso de un resize
-          hiddenDays={[0]}  // no incluye domingos
+          //hiddenDays={[0]}  // no incluye domingos
           dateClick={handleDateClick}    //para agregar un nuevo evento
           eventClick={handleEventClick} //se optiene los datos del evento 
           //eventsSet={handleChanges}    //cualquier cambio del calendario
           eventChange={handleChange}  //algun cambio del calendario
           eventAdd={handleNewEvent}  //se ejecuta cuando se agrega un nuevo evento
           events={evento} 
+          datesSet={(args) => listaAgenda(moment(args.startStr).format('YYYY-MM-DD'), moment(args.endStr).format('YYYY-MM-DD'))}  //console.log("###datesSet:", args)}
         /> 
 
       </div>

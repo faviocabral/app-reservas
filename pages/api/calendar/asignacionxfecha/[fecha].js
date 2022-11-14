@@ -8,7 +8,7 @@ export default async function  handler(req , res ){
                 const fecha = req.query.fecha 
                 await conn1.select()
                 .from('v_asignadosxfecha')
-                .where('fechaf','>', fecha)
+                .where('fechaf','>=', fecha)
                 .andWhere('fechai','<=', fecha)
                 .orWhere({
                     fechai : fecha , 
