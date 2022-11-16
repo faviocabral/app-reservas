@@ -1,4 +1,4 @@
-import React, {useEffect, useRef, createRef, useState , useMemo } from 'react'
+import React, {useEffect, useRef, createRef, useState , useMemo , useContext } from 'react'
 import FullCalendar from '@fullcalendar/react' // must go before plugins
 import interactionPlugin from "@fullcalendar/interaction";
 import timeGridPlugin from "@fullcalendar/timegrid";
@@ -77,6 +77,8 @@ function Calendar() {
   const [abrirBuscador, setAbrirBuscador] = useState('')
   const [titulo , setTitulo ] = useState('')
   const [vehiculos, setVehiculos] = useState([])
+
+
   ////////////////////////////////
   // SETEOS INICIALES DEL CALENDARIO
   ////////////////////////////////
@@ -287,6 +289,7 @@ function Calendar() {
       setData({...data , codigoCliente: item.cardcode , nombreCliente: item.cardname})
       toast.success(<div>{'cliente asignado'} <br /> {item.cardname} </div> , {autoClose:700})
     }
+    
     const updateData = e => {
       setData({
           ...data,
@@ -554,14 +557,14 @@ function Calendar() {
 
                         <div className='col-4'>
                           <div className="mb-3">
-                            <label htmlFor="uname" className="form-label">Fecha inicio:</label>
+                            <label htmlFor="uname" className="form-label text-center w-100"><b>Fecha inicio:</b></label>
                             <input type="date" className="form-control" id="uname" placeholder="Enter username" name="fechai" required value={(data.fechai.length > 0)?data.fechai:agenda.dateStr} ref={fechaIRef} onChange={updateData} readOnly={(agenda?.tipoEvento === 'upd')?true:false }  />
                           </div>
                         </div>
 
                         <div className='col-4'>
                           <div className="mb-3">
-                            <label htmlFor="pwd" className="form-label">Fecha Fin:</label>
+                            <label htmlFor="pwd" className="form-label text-center w-100"><b>Fecha Fin:</b></label>
                             <input type="date" className="form-control" id="pwd" placeholder="Enter password" name="fechaf" required value={(data.fechaf.length > 0)?data.fechaf:agenda.dateStr} ref={fechaFRef} onChange={updateData } readOnly={(agenda?.tipoEvento === 'upd')?true:false } />
                           </div>
                         </div>
@@ -590,12 +593,14 @@ function Calendar() {
                       </div>
                       <div className='row'>
                           <div className="input-group mt-3 mb-3"> 
-                          <button className="btn btn-primary " onClick={ buscarCliente } data-bs-toggle="dropdown" disabled={(agenda?.tipoEvento === 'upd')?true:false } > <b> <i class="bi bi-search"></i> </b> </button>
+                            <span class="input-group-text"><b>Cliente</b></span>
+                            <button className="btn btn-primary " onClick={ buscarCliente } data-bs-toggle="dropdown" disabled={(agenda?.tipoEvento === 'upd')?true:false } > <b> <i class="bi bi-search"></i> </b> </button>
                             <input type="text" className="form-control" placeholder="codigo cliente..." name="codigoCliente" ref={codigoCliRef} onChange={ updateData } value={data?.codigoCliente} readOnly/>
                             <input type="text" className="form-control" id="nombreCliente" placeholder="Nombre de Cliente" name="nombreCliente" ref={nombreCliRef} style={{width:'35%'}} onChange={ updateData } value={data?.nombreCliente} readOnly/>
                           </div>
 
                           <div className="input-group mt-3 mb-3"> 
+                          <span class="input-group-text"><b>Taller</b> &nbsp;&nbsp;&nbsp;</span>
                           <select class="form-select" aria-label="Default select example" name="taller" onChange={ updateData }  value={data?.taller} disabled={(agenda?.tipoEvento === 'upd')?true:false }>
                             <option selected>Taller ?</option>
                             { 

@@ -21,7 +21,6 @@ export default function Login() {
     })
   }
 
-
   const login = async (e)=>{
     e.preventDefault()
     Swal.showLoading()
@@ -38,11 +37,12 @@ export default function Login() {
         setError(true)
         toast.error('Datos incorrectos !!!',{ autoClose:1000 })
       }else{
-        //setData({})
         setError(false)
         Cookies.set('logginRenting', true, { expires: 1 })
         //toast.success('Datos correctos !!!',{ autoClose:2000 })
         contextLogin.setLogin(true)
+        contextLogin.setUsuario(json.usuario)
+        Cookies.set('userRenting' , JSON.stringify(json.usuario) , { expires: 1 })
         router.push("/calendar")    
       }
     
@@ -50,7 +50,6 @@ export default function Login() {
     .catch(err => console.log(err))
 
   }
-
 
   useEffect(()=>{
     userInput.current.focus()

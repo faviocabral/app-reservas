@@ -1,4 +1,6 @@
-//import knex from '../../../../db/kenx.js'
+import {conn1} from '../../../db/kenx.js'
+import moment from 'moment'
+import bcrypt from "bcrypt";
 
 export default async function  handler(req , res ){
 
@@ -13,6 +15,10 @@ export default async function  handler(req , res ){
             }
         case 'PUT':
             try {
+
+                
+
+
                 return res.status(200).json({message:' otbtener datos !!! valor => ' + req.query.id})     
             } catch (error) {
                 return res.status(500).json({message:' hubo un error con el metodo get !!!'})

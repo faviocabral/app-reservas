@@ -1,4 +1,5 @@
-
+import {conn1} from '../../../db/kenx.js'
+import moment from 'moment'
 
 export default async function  handler(req , res ){
 
@@ -6,7 +7,21 @@ export default async function  handler(req , res ){
     switch (req.method) {
         case 'GET':
             try {
-                return res.status(200).json({message:' otbtener datos !!!'})     
+                const fecha = req.query.id 
+                await conn1.select()
+                .from('agendarenting_tipo_usuarios')
+                .then(async (rows)=>{
+                    let tipos = rows.map(item=>{
+                        return({
+                            id: item.id, 
+                            nombre: item.nombre, 
+                         })
+                    })
+                    res.status(200).json({ tipos })
+                })
+                .catch(err => res.status(500).json({message: 'hubo un error en la consulta ' + err })) 
+
+                //return res.status(200).json({message:' otbtener datos !!!'})     
             } catch (error) {
                 return res.status(500).json({message:' hubo un error con el metodo get !!!'})
             }

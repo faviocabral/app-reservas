@@ -1,18 +1,27 @@
-import React , {useContext} from 'react'
+import React , {useContext , useEffect, useState} from 'react'
 import Link from 'next/link'
 import AppContext from '../context/appContex'
 import {useRouter} from 'next/router'
 import Cookies from 'js-cookie'
+import { toast } from 'react-toastify'
 
 function Navbar() {
-
-
+  
   const router = useRouter()
   const contextLogin = useContext(AppContext)
+  const [usuario , setUsuario] = useState({})
+  const [auth , setAuth] = useState(false)
+
+  const authMesg = () =>{
+    if(!contextLogin.auth){
+      toast.error('No esta autorizado a utilizar este modulo') 
+    }     
+  }
 
   const logout = () => {
     contextLogin.setLogin(false)
-    Cookies.set('logginRenting', false)
+    Cookies.remove('logginRenting')
+    Cookies.remove('userRenting' )
     router.push("/login")
   }
 
@@ -49,16 +58,34 @@ function Navbar() {
               </a>
             </Link>
           </li>
+
+          <li>
+            <Link href={(contextLogin.auth)?"/usuarios":""} >
+              <a href="#" className="nav-link text-secondary pt-0 pb-1" onClick={authMesg}>
+                <i className="bi bi-person-fill d-block mx-auto text-center text-white elevation-1" style={{ fontSize: 30, height: "40px" }} ></i>
+                <span className="text-white">Usuarios</span>
+              </a>
+            </Link>
+          </li>
+          
         </ul>
 
         <ul className="nav col-12 col-lg-auto my-2 justify-content-end my-md-0 text-small">
-          
+
+        <li>
+            <a href="#" className="nav-link text-secondary pt-0 pb-1">
+              <i className="bi bi-person-fill d-block mx-auto text-center text-white elevation-1" style={{ fontSize: 30, height: "40px" }} ></i>
+              <span className="text-white">{contextLogin.usuario.nombre}</span>
+            </a>
+          </li>
+
           <li>
               <a href="#" className="nav-link text-secondary pt-0 pb-1" onClick={logout}>
                 <b><i className="bi bi-power d-block mx-auto text-center text-white elevation-1" style={{ fontSize: 30, height: "40px" }} ></i></b>
                 <span className="text-white">Logout</span>
               </a>
           </li>
+          
         </ul>
 
       </div>

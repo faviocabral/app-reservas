@@ -17,7 +17,17 @@ export default function Layout({children}) {
       }else{
         contextLogin.setLogin(true)
       }
-    }    
+    }
+
+    contextLogin.setUsuario( JSON.parse(Cookies.get('userRenting')))
+    let dato = JSON.parse(Cookies.get('userRenting'))
+    if(dato.tipo === 'Administrador'){
+      contextLogin.setAuth(true)
+    }else{
+      contextLogin.setAuth(false)
+      
+    }
+
   },[])
 
   return (
