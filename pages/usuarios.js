@@ -18,9 +18,6 @@ export default function Usuarios() {
 
     useEffect(()=>{
 
-        //verificar permiso
-        const usuario = JSON.parse( Cookies.get('userRenting'))
-
         listarUsuarios()
         setTimeout(() => {
             init()
@@ -39,7 +36,7 @@ export default function Usuarios() {
             id_tipo_usuario: oForm.elements["id_tipo_usuario"].value,
             estado: oForm.elements["estado"].value,
         })
-        setCrud('')
+        setCrud('ins')
         nombreRef.current.focus()
     }
 
@@ -60,7 +57,7 @@ export default function Usuarios() {
     const handleSubmit = async(e) => {
         e.preventDefault()
         nombreRef.current.focus()
-
+        let idUser = 0;
         let index = Object.values(usuario).findIndex((item , index ) => item?.length ===0 && index !== 0 )
         if(index > 0 ){
             toast.error('Debe completar todos los campos !!! ')
@@ -69,21 +66,30 @@ export default function Usuarios() {
 
         //estos campos no necesitamos actualizar ... 
         if(crud === 'upd'){
+            //setear de vuelta el usuario en la cookies
+            Cookies.set('userRenting' , JSON.stringify( {nombre: usuario.nombre , user: usuario.user , tipo: usuario.tipo} ) , { expires: 1 })
+            idUser = usuario.id 
+            
+            delete usuario.id // en mysql no tiene problema pero si en mssql 
             delete usuario.tipo
-            delete usuario.fecha_ins
+            delete usuario.fecha_ins 
             delete usuario.user_ins
 
+        }else{
+            delete usuario.id // lo mismo el id identity no tiene problemas al enviar a mysql pero si en mssql 
         }
 
         Swal.showLoading()
-        await fetch('api/usuarios', {
+        let url =  (crud === 'ins')? 'api/usuarios'  : `api/usuarios?id=${idUser}`
+        await fetch( url  , {
             method: (crud === 'ins')?"POST": "PUT",
             body: JSON.stringify(usuario),
             headers: {"Content-type": "application/json; charset=UTF-8"}
         })
         .then(response => response.json()) 
         .then(json => {
-            toast.success('Datos Grabados correctamente !!!')
+            alert(JSON.stringify(json))
+            toast.success('Datos Grabados correctamente !!! ' )
             Swal.close()
             init()
             listarUsuarios()
@@ -102,6 +108,7 @@ export default function Usuarios() {
 
     //cuando cancelamos la operacion.
     const cancelar = () =>{
+        //alert( JSON.stringify( Object.values(usuario)?.map(item => item?.length > 0 ).filter(item => item).length ) )
         init()
     }
 
@@ -111,7 +118,7 @@ export default function Usuarios() {
             ...usuario,
             [e.target.name]: e.target.value
         })
-
+      
       }
 
   return (
@@ -165,10 +172,11 @@ export default function Usuarios() {
                                 <div class="form-check mb-3">
                                     <label className="form-check-label"><b>tipo Usuario</b></label>
                                     <select class="form-select" aria-label="Default select example" onBlur={(e)=>setUsuario({...usuario, id_tipo_usuario: e.target.value })} name="id_tipo_usuario" value={usuario?.id_tipo_usuario} onChange={ updateData } ref={tipoRef}>
-                                        <option selected value="33">Administrador</option>
-                                        <option value="36">Call Center</option>
-                                        <option value="35">Asesor</option>
-                                        <option value="34">Taller</option>
+                                        <option selected value="1">Administrador</option>
+                                        <option value="2">Gte Taller</option>
+                                        <option value="5">Call Center</option>
+                                        <option value="4">Asesor</option>
+                                        <option value="3">Supervisor</option>
                                     </select>
                                 </div>     
                             </div>
@@ -211,7 +219,7 @@ export default function Usuarios() {
                             </thead>
                             <tbody>
                                 {
-                                    listaUsuarios.map((item, index)=>{
+                                    listaUsuarios?.map((item, index)=>{
                                         return (
                                             <tr key={item.id}>
                                                 <th>{index +1}</th>

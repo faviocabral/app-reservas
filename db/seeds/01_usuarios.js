@@ -6,6 +6,6 @@ exports.seed = async function(knex) {
   // Deletes ALL existing entries
   await knex('agendarenting_usuarios').del()
   await knex('agendarenting_usuarios').insert([
-    { nombre: 'Administrador' , user: 'admin' , password: '$2a$12$D.TE9JGNbHC/dzzj/HUzIuHlgGab8eeFO6H3F0lKgbYg6rqlewi4S'},
+    { nombre: 'Administrador' , user: 'admin' , estado:'activo', id_tipo_usuario: 1 , password: '$2a$12$D.TE9JGNbHC/dzzj/HUzIuHlgGab8eeFO6H3F0lKgbYg6rqlewi4S'},
   ]);
 };

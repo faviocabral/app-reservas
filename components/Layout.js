@@ -18,14 +18,14 @@ export default function Layout({children}) {
         contextLogin.setLogin(true)
       }
     }
-
-    contextLogin.setUsuario( JSON.parse(Cookies.get('userRenting')))
-    let dato = JSON.parse(Cookies.get('userRenting'))
-    if(dato.tipo === 'Administrador'){
-      contextLogin.setAuth(true)
-    }else{
-      contextLogin.setAuth(false)
-      
+    if(Cookies.get('userRenting') !== undefined) {
+      contextLogin.setUsuario( JSON.parse(Cookies.get('userRenting')) )
+      let dato = JSON.parse(Cookies.get('userRenting'))
+      if(dato.tipo === 'Administrador'){
+        contextLogin.setAuth(true)
+      }else{
+        contextLogin.setAuth(false)
+      }
     }
 
   },[])

@@ -8,6 +8,7 @@ exports.seed = async function(knex) {
   await knex('agendarenting_tipo_usuarios').insert([
     { nombre: 'Administrador' , estado: 'Activo'},
     { nombre: 'Gerente Taller' , estado: 'Activo'},
+    { nombre: 'Supervisor' , estado: 'Activo'},
     { nombre: 'Asesor' , estado: 'Activo'},
     { nombre: 'Call Center' , estado: 'Activo'},
   ]);

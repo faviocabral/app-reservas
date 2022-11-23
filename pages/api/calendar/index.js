@@ -7,11 +7,11 @@ export default async function  handler(req , res ){
             try {
                 const fecha = req.query.id 
                 await conn1.select()
-                .from('v_agendas')
+                .from('v_agendarenting_agendas')
                 .where('fecha', `2022-11-09`)
                 .then(async (rows)=>{
                     await conn1.select()
-                    .from('v_detalles')
+                    .from('v_agendarenting_detalles')
                     .whereIn('id_cab', rows.map(item => item.id))
                     .then(async (rows2)=>{
                         let agenda = rows.map(item=>{
@@ -23,31 +23,31 @@ export default async function  handler(req , res ){
                 .catch(err => res.status(500).json({message: 'hubo un error en la consulta ' + err }))                
 
 
-                return res.status(200).json({message:' otbtener datos !!!'})     
+                //return res.status(200).json({message:' otbtener datos !!!'})
             } catch (error) {
                 return res.status(500).json({message:' hubo un error con el metodo get !!!'})
             }
-        case 'POST':
-            try {
-                const agenda = req.body
-                
-                await conn1.insert(agenda.cab)
-                  .returning('id')
-                  .into('agendarenting_agenda')
-                  .then(async (id)=> {
+        case 'POST': 
+            try { 
+                const agenda = req.body 
+                await conn1.insert(agenda.cab) 
+                  .returning('id') 
+                  .into('agendarenting_agenda')  
+                  .then(async (idAgenda)=> { 
                     
                     //insertar detalle vehiculos 
-                    // agenda.det.id_cab = id 
-                    agenda.det.forEach(item => item.id_cab = id )
-                    await conn1.insert(agenda.det)
-                      .into('agendarenting_detalles')
-                      .then((id2)=> {
-                        // use id here
-                        return res.status(200).json({message:' datos insertados correctamente !!!'})
-                      });
+                    let detalles = await agenda.det.map(item => { return( {...item, id_cab: idAgenda[0].id } ) } )
+                    await conn1.insert(detalles) 
+                      .into('agendarenting_detalles') 
+                      .then((id2)=> { 
+                        // use id here 
+                        return res.status(200).json({message:' datos insertados correctamente !!!', detalle: id2}) 
+                      })
+                      .catch((err)=>{ return res.status(200).json({message:' hubo un problema en el det !!!', error : err}) })
 
-                  })
-                  .catch((err)=>{ return res.status(200).json({message:' hubo un problema !!!', error : err}) })
+                  }) 
+                  .catch((err)=>{ return res.status(200).json({message:' hubo un problema en el cab !!!', error : err}) }) 
+                  
                   
                   //return res.status(200).json({message:' insertar datos !!!' , agenda: agenda.cab , vehiculos : agenda.det })
                 

@@ -11,6 +11,7 @@ import { toast } from 'react-toastify'
 import { Button, Modal, ModalHeader, ModalBody, ModalFooter } from 'reactstrap'
 import { Stepper, Step } from 'react-form-stepper'
 import Buscador from '../components/Buscador.js' //modal.
+import Cookies from 'js-cookie'
 
 let socket 
 socket = io("http://localhost:8000");
@@ -78,6 +79,10 @@ function Calendar() {
   const [titulo , setTitulo ] = useState('')
   const [vehiculos, setVehiculos] = useState([])
 
+  const [user , setUser ] = useState({})
+  const [authAsesor ,setAuthAsesor] = useState(true)
+  const [authCall ,setAuthCall] = useState(true)
+  const [rangoFecha, setRangoFecha] = useState({fechai: '', fechaf: ''})
 
   ////////////////////////////////
   // SETEOS INICIALES DEL CALENDARIO
@@ -210,11 +215,10 @@ function Calendar() {
     const listaAgenda= async (fechai , fechaf) =>{
       await fetch(`api/calendar/rango?fechai=${fechai}&fechaf=${fechaf}` )
       .then(response => response.json()) 
-      .then( async(json) => {
-        await fetch('api/vehiculos')  
+      .then( async(json) => { 
+        await fetch('api/vehiculos') 
           .then(response => response.json()) 
           .then( async( vhe ) => {
-
             let lista = json.agenda.map(item => {  
               return({...item,
                 date: item.fecha,
@@ -228,6 +232,7 @@ function Calendar() {
                 vehiculos: vhe.rows.filter(item2 => item.det.map(item3 => item3.vin ).includes(item2.vin) )
               })
             })
+            console.log((lista))
             setEvento(lista)
             setBaseDatos(lista)
           })
@@ -273,14 +278,14 @@ function Calendar() {
 
       let codigo = document.getElementsByName('buscar')[0].value
       await fetch('http://localhost:3000/api/clientes/'+ codigo)
-      .then(response => response.json())
-      .then(data => {
-        setListaCliente(data.rows)
-        setTimeout(() => {
+      .then(response => response.json()) 
+      .then(data => { 
+        setListaCliente(data.rows) 
+        setTimeout(() => { 
           buscarRef.current.value = codigo 
-          buscarRef.current.focus()
-        }, 200);
-        console.log(data)
+          buscarRef.current.focus() 
+        }, 200); 
+        console.log(data) 
       });
       
     }
@@ -291,32 +296,48 @@ function Calendar() {
     }
     
     const updateData = e => {
+
+      //controlamos cuando sea fechafin que no se solapen las asignaciones... 
+      if(e.target.name === 'fechaf'){
+        let res = controlAsignacion()
+        if(res > 0 )
+          return 
+        
+        if( moment(fechaFRef.current.value).diff(fechaIRef.current.value , 'days') )
+          toast.warning('No puede agendar una fecha inferior al inicio !!!')
+          return 
+
+        
+      }
+
       setData({
           ...data,
           [e.target.name]: e.target.value
       })
+
     }
 
     ///////////////////////////////////////////////////////////////////////////
     /// NUEVO EVENTO 
-    ///////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////// 
     const handleDateClick = (arg) => { 
 
-      listaVehiculos()
-      talleres()
-      asignadosxFecha(arg.dateStr)
-      setAsignados([])
-      dataInterface.fechai = arg.dateStr
-      dataInterface.fechaf = arg.dateStr
-      setData(dataInterface)
-      //setData({...data, fechai: arg.dateStr , fechaf: arg.dateStr})
-      let eventos = []
-      if(localStorage.hasOwnProperty('addEvent')){
-        eventos = JSON.parse( localStorage.getItem('addEvent'))
-      }
+      listaVehiculos() 
+      talleres() 
+      asignadosxFecha(arg.dateStr) 
+      setAsignados([]) 
+
+      dataInterface.fechai = arg.dateStr 
+      dataInterface.fechaf = arg.dateStr 
+      setData(dataInterface) 
+      //setData({...data, fechai: arg.dateStr , fechaf: arg.dateStr}) 
+      let eventos = [] 
+      if(localStorage.hasOwnProperty('addEvent')){ 
+        eventos = JSON.parse( localStorage.getItem('addEvent')) 
+      } 
 
       //si existe algun evento bloquea... 
-      if(eventos.findIndex(item => item.fecha === arg.dateStr) >= 0){
+      if(eventos?.findIndex(item => item.fecha === arg.dateStr) >= 0){
         let myEvento = evento.find(item => item.fecha === arg.dateStr)
         Swal.fire(` ${ String(myEvento.title) } \n en esta fecha ${myEvento.fecha } ` )
         return 
@@ -340,14 +361,26 @@ function Calendar() {
     const handleEventClick = (info) => { 
       console.log(info)
       //alert(info.event.title)
+      //para habilitar botonoes y permisos segun roles 
+      setUser( JSON.parse(Cookies.get('userRenting')) )
+
+      //para controlar habilitaciones de botones tanto para callcenter y asesores y supervisores
+      let control = JSON.parse(Cookies.get('userRenting')) 
+      if( ('asesor administrador supervisor').includes( control.tipo.toLowerCase() ))
+        setAuthAsesor(false)
+
+      if( ('call center administrador supervisor').includes( control.tipo.toLowerCase() ))
+        setAuthCall(false)
+
       setAgenda({dateStr: info.event.startStr, tipoEvento: 'upd' , title: info.event.title })
       let myEvent = {
-        fecha: moment(info.event.extendedProps.fecha).format('YYYY-MM-DD'), 
-        fechai: moment(info.event.extendedProps.fechai).format('YYYY-MM-DD'), 
-        fechaf:moment(info.event.extendedProps.fechaf).format('YYYY-MM-DD'), 
+        fecha: moment(info.event.extendedProps.fecha).utc().format('YYYY-MM-DD'), 
+        fechai: moment(info.event.extendedProps.fechai).utc().format('YYYY-MM-DD'), 
+        fechaf: moment(info.event.extendedProps.fechaf).utc().format('YYYY-MM-DD'), 
         codigoCliente: info.event.extendedProps.codigo_cliente, 
         nombreCliente: info.event.extendedProps.nombre_cliente, 
-        taller: info.event.extendedProps.id_taller
+        taller: info.event.extendedProps.id_taller, 
+        id: info.event.extendedProps.id_agenda
       }
       ///info.event.extendedProps.
       setData(myEvent)
@@ -383,7 +416,7 @@ function Calendar() {
       }
 
       let list = evento.filter(item => item.fecha !== changeEvent.fecha && item.title !== changeEvent.title ) // quitamos de la lista para actualizar el nuevo evento 
-      list.push({title: changeEvent.title, date: changeEvent.fecha , start: moment(changeEvent.start).format('YYYY-MM-DD') , end: moment(changeEvent.end).format('YYYY-MM-DD'), fecha: changeEvent.fecha, vehiculos: changeEvent.vehiculos }) // luego agregamos el nuevo evento
+      list.push({title: changeEvent.title, date: changeEvent.fecha , start: moment(changeEvent.start).utc().format('YYYY-MM-DD') , end: moment(changeEvent.end).utc().format('YYYY-MM-DD'), fecha: changeEvent.fecha, vehiculos: changeEvent.vehiculos }) // luego agregamos el nuevo evento
       setEvento(list)
       socket.emit('changeEvent' , list )
 
@@ -398,18 +431,21 @@ function Calendar() {
         Swal.fire({ title:'Debe completar datos de cliente y taller !!' , icon: 'warning'})
         return 
       }
+
+      let persona = JSON.stringify( Cookies.get('userRenting') )
+      alert(JSON.stringify( persona))
       const agenda = {
                       cab : {
                         codigo_cliente: data.codigoCliente,
                         nombre_cliente: data.nombreCliente,
                         titulo: data.nombreCliente,
-                        id_estado: 21, //agendado
+                        id_estado: 1, //agendado
                         id_taller: data.taller,
-                        fecha: moment(data.fechai).format('YYYY-MM-DD'),
-                        fechai: moment(data.fechai).format('YYYY-MM-DD'),
-                        fechaf: moment(data.fechaf).format('YYYY-MM-DD'),
+                        fecha: moment(data.fechai).utc().format('YYYY-MM-DD'),
+                        fechai: moment(data.fechai).utc().format('YYYY-MM-DD'),
+                        fechaf: moment(data.fechaf).utc().format('YYYY-MM-DD'),
                         estado: 'Agendado',
-                        user_ins: 'admin'
+                        user_ins: persona.user 
                       },
                       det : asignados.map(item=>{
                         return (
@@ -418,7 +454,7 @@ function Calendar() {
                             nombre: item.modelo,
                             id_vehiculo: item.id,
                             estado: 'Agendado',
-                            user_ins : 'admin'
+                            user_ins : persona.user 
                           }
                         )
                       })
@@ -438,7 +474,7 @@ function Calendar() {
         setData(dataInterface) //limpiamos los datos de la agenda
         setListaCliente([]) //limpiamos el buscador
         toggle() //cerramos el modal de la agendamiento.
-        listaAgenda( moment(fecha).format('YYYY-MM') )// recuperamos las agenda del mes
+        listaAgenda( rangoFecha.fechai , rangoFecha.fechaf )// recuperamos las agenda del mes
 
       })
       .catch(err => console.log(err))
@@ -448,19 +484,56 @@ function Calendar() {
     const cancelarEvento = ()=>{
 
       //SE CANCELO EL EVENTO
-      socket.emit("cancelEvent", JSON.stringify({title: 'el usuario '+ socket.id+' cancelo un evento ', date: agenda.dateStr , fecha: agenda.dateStr }))
+      socket.emit("cancelEvent", JSON.stringify({title: ' el usuario '+ socket.id+' cancelo un evento ', date: agenda.dateStr , fecha: agenda.dateStr }))
       setAgenda({})
       setListaAsignados([])
       toggle()
     }
 
+    const cancelarAgenda = async()=>{
+      
+        Swal.showLoading()
+        let usuario = await JSON.parse(Cookies.get('userRenting'))
+        let datos = { id: data.id , tipoEvento: 'cancelar' , user: usuario.user }
+        alert(JSON.stringify(data))
+        await fetch('api/calendar/' + data.id , {
+          method: "PUT",
+          body: JSON.stringify(datos ),
+          headers: {"Content-type": "application/json; charset=UTF-8"}
+        })
+        .then(response => response.json()) 
+        .then(json => {
+          toast.success('Agenda Cancelada !!! ')
+          alert(JSON.stringify(json))
+          Swal.close()
+          setAsignados([]) // limpiamos lista de vehiculos 
+          setData(dataInterface) //limpiamos los datos de la agenda
+          setListaCliente([]) //limpiamos el buscador
+          toggle() //cerramos el modal de la agendamiento.
+          listaAgenda( rangoFecha.fechai , rangoFecha.fechaf )// recuperamos las agenda del mes
+
+        })
+        .catch(err => console.log(err))
+
+        
+    }
+
+    const addDias = ( dias )=>{
+
+      //controlar los dias asignados... 
+      let res = controlAsignacion('', moment(agenda?.dateStr).add(dias, 'd').utc().format('YYYY-MM-DD')) 
+      if(res > 0 ) 
+        return 
+
+      setData({...data, ['fechaf']:fechaFRef.current.value = moment(agenda?.dateStr).add(dias, 'd').utc().format('YYYY-MM-DD')})
+    }
 
     const toggle = () => setModal2(!modal2)
     const Modal1 = ()=>{
       return (
         <div>
           <Modal isOpen={modal2} fade={false} centered={true}  size='xl' style={{minWidth:'95%'}}>
-            <ModalHeader toggle={()=>cancelarEvento()} style={{paddingTop:'5px', paddingBottom:'2px'}}> {(agenda?.tipoEvento === 'ins')? 'Nuevo Evento' : 'Modificar Evento' } | { agenda?.dateStr } |  {(agenda?.tipoEvento === 'upd'? 'Agendado' : '' )} </ModalHeader>
+            <ModalHeader toggle={()=>cancelarEvento()} style={{paddingTop:'5px', paddingBottom:'2px'}}> {(agenda?.tipoEvento === 'ins')? 'Nuevo Evento' : 'Modificar Evento' } | { moment(agenda?.dateStr).format('YYYY-MM-DD') } |  {(agenda?.tipoEvento === 'upd'? 'Agendado' : '' )} </ModalHeader>
             <ModalBody>
               <div className="container-fluid">
                 <div className='row'>
@@ -558,14 +631,14 @@ function Calendar() {
                         <div className='col-4'>
                           <div className="mb-3">
                             <label htmlFor="uname" className="form-label text-center w-100"><b>Fecha inicio:</b></label>
-                            <input type="date" className="form-control" id="uname" placeholder="Enter username" name="fechai" required value={(data.fechai.length > 0)?data.fechai:agenda.dateStr} ref={fechaIRef} onChange={updateData} readOnly={(agenda?.tipoEvento === 'upd')?true:false }  />
+                            <input type="date" className="form-control text-center" id="uname" placeholder="Enter username" name="fechai" required value={(data.fechai.length > 0)?data.fechai:agenda.dateStr} ref={fechaIRef} onChange={updateData} readOnly={true }  />
                           </div>
                         </div>
 
                         <div className='col-4'>
                           <div className="mb-3">
                             <label htmlFor="pwd" className="form-label text-center w-100"><b>Fecha Fin:</b></label>
-                            <input type="date" className="form-control" id="pwd" placeholder="Enter password" name="fechaf" required value={(data.fechaf.length > 0)?data.fechaf:agenda.dateStr} ref={fechaFRef} onChange={updateData } readOnly={(agenda?.tipoEvento === 'upd')?true:false } />
+                            <input type="date" className="form-control text-center" id="pwd" placeholder="Enter password" name="fechaf" required value={(data.fechaf.length > 0)?data.fechaf:agenda.dateStr} ref={fechaFRef} onChange={updateData } readOnly={(agenda?.tipoEvento === 'upd')?true:false } />
                           </div>
                         </div>
 
@@ -584,11 +657,11 @@ function Calendar() {
 
                       <div className="row">
                         <div className="btn-group" style={{ marginBottom: 10,}}>
-                          <button type="button" className="btn btn-primary" onClick={()=> setData({...data, ['fechaf']:fechaFRef.current.value = moment(agenda?.dateStr).add(0, 'd').format('YYYY-MM-DD')})  } disabled={(agenda?.tipoEvento === 'upd')?true:false } >1 Dia</button>
-                          <button type="button" className="btn btn-warning" onClick={()=> setData({...data, ['fechaf']:fechaFRef.current.value = moment(agenda?.dateStr).add(1, 'd').format('YYYY-MM-DD')}) } disabled={(agenda?.tipoEvento === 'upd')?true:false } >2 Dias</button>
-                          <button type="button" className="btn btn-info"    onClick={()=> setData({...data, ['fechaf']:fechaFRef.current.value = moment(agenda?.dateStr).add(2, 'd').format('YYYY-MM-DD')}) } disabled={(agenda?.tipoEvento === 'upd')?true:false } >3 Dias</button>
-                          <button type="button" className="btn btn-danger"  onClick={()=> setData({...data, ['fechaf']:fechaFRef.current.value = moment(agenda?.dateStr).add(3, 'd').format('YYYY-MM-DD')}) } disabled={(agenda?.tipoEvento === 'upd')?true:false } >4 Dia</button>
-                          <button type="button" className="btn btn-dark"    onClick={()=> setData({...data, ['fechaf']:fechaFRef.current.value = moment(agenda?.dateStr).add(4, 'd').format('YYYY-MM-DD')}) } disabled={(agenda?.tipoEvento === 'upd')?true:false } >5 Dias</button>
+                          <button type="button" className="btn btn-primary" onClick={()=> addDias(0)  } disabled={(agenda?.tipoEvento === 'upd')?true:false } >1 Dia</button>
+                          <button type="button" className="btn btn-warning" onClick={()=> addDias(1) } disabled={(agenda?.tipoEvento === 'upd')?true:false } >2 Dias</button>
+                          <button type="button" className="btn btn-info"    onClick={()=> addDias(2) } disabled={(agenda?.tipoEvento === 'upd')?true:false } >3 Dias</button>
+                          <button type="button" className="btn btn-danger"  onClick={()=> addDias(3) } disabled={(agenda?.tipoEvento === 'upd')?true:false } >4 Dia</button>
+                          <button type="button" className="btn btn-dark"    onClick={()=> addDias(4) } disabled={(agenda?.tipoEvento === 'upd')?true:false } >5 Dias</button>
                         </div>              
                       </div>
                       <div className='row'>
@@ -706,26 +779,23 @@ function Calendar() {
                           </table>
                       </div>
                   </div>
-
               </Buscador>
 
-
-
-            </ModalBody>
-            <ModalFooter>
-               {
-                (agenda.tipoEvento === 'upd' )
-                ?
-                  <>
-                    <Button color="info" > Entregado </Button>
-                    <Button color="dark" style={{marginRight:'25px'}}> Recibido </Button>
-                    <Button color="secondary" > Re-Agendar </Button>
-                    <Button color="warning" style={{marginRight:'25px'}}> Cancelar Agenda</Button>
-                  </>
+            </ModalBody> 
+            <ModalFooter> 
+               { 
+                (agenda.tipoEvento === 'upd') 
+                ? 
+                    <> 
+                    <Button color="info"  disabled={authAsesor} > Entregado </Button> 
+                    <Button color="dark"  disabled={authAsesor} style={{marginRight:'25px'}}> Recibido </Button> 
+                    {/* <Button color="secondary" disabled={authCall}> Re-Agendar </Button> */}
+                    <Button color="warning"   disabled={authCall} style={{marginRight:'25px'}} onClick={cancelarAgenda}> Cancelar Agenda</Button>
+                    </>
                 : <span></span>
                }             
 
-              <Button color="primary" onClick={()=> crearEvento()} disabled={(asignados.length > 0 ? false : true)} > Agendar</Button>
+              <Button color="primary" onClick={()=> crearEvento()} disabled={(asignados.length === 0 || agenda.tipoEvento === 'upd' ? true : false)} > Agendar</Button>
               <Button color="danger" onClick={()=>cancelarEvento()}> Salir</Button>
             </ModalFooter>
           </Modal>
@@ -733,7 +803,61 @@ function Calendar() {
       )
     }
 
+
+    const controlAsignacion = ( chassis = '' , fechafForm = fechaFRef.current.value )=>{
+
+      //controla la asignacion que no se solapen con las fechas ... 
+      //este control es cuando se asigna un vehiculo... 
+      let fechaiForm = fechaIRef.current.value 
+      let existe = 0 
+      let msgError= `Ya existe una asignacion en esta fecha ${fechafForm} !!! ` 
+      let res = evento.map(item =>{ 
+              return({ 
+                  fechai:item.fechai, 
+                  diff: (fechaiForm < item.fechai )? moment(fechafForm).diff(item.fechai , 'days') :  -1, //compara lista de eventos contra la fecha inicio del formulario 
+                  vins: item.det.map(item => item.vin ) 
+              }) 
+            }) 
+            .filter(item => item.diff >= 0 && item.vins.findIndex(item => item !== chassis)  ) 
+      //alert(JSON.stringify(res)) 
+      if(res.length > 0 ){ 
+        toast.warning(msgError , {timeout: 5000} ) 
+        existe = res.length
+      }
+
+      //controla que no se solapen desde rangos de fecha 
+      //alert(JSON.stringify(asignados))
+      let lista = [] 
+      asignados?.forEach(item3=>{
+        lista = evento.map(item =>{ 
+          return({ 
+              fechai:item.fechai, 
+              diff:(fechaiForm < item.fechai )? moment(fechafForm).diff(item.fechai , 'days') :  -1, //compara lista de eventos contra la fecha inicio del formulario 
+              vins: item.det.map(item => item.vin ) 
+          }) 
+        })
+        .filter(item => item.diff >= 0 && item.vins.findIndex(item => item !== item3.vin)  ) 
+
+          //alert(JSON.stringify(lista))
+          if(lista.length > 0 ){
+            toast.warning(msgError,{ timeout: 5000})
+            existe = lista.length
+          }
+
+      })
+
+
+      return existe 
+
+    }
+
+
     const asignarVehiculo = (chassis) =>{
+
+        let res = controlAsignacion(chassis)
+        if(res > 0 )
+          return 
+
         let vehiculo = vehiculos.find(item => item.vin === chassis )
         setAsignados([...asignados, vehiculo])
   
@@ -746,6 +870,12 @@ function Calendar() {
         setAsignados(lista)
     }
 
+
+    const refreshCalendar= ()=>{
+      listaAgenda(rangoFecha.fechai, rangoFecha.fechaf)
+      toast.info('Agenda actualizada !')
+    }
+
   return (
     <Layout>
       <div className="d-flex">
@@ -755,13 +885,28 @@ function Calendar() {
           dayMaxEventRows={true}
           ref={calendarRef}
           plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin, listPlugin]}
+          customButtons= {{
+                            refreshButton: {
+                              text: 'Refresh!',
+                              click: function() {
+                                refreshCalendar()
+                              }
+                            }            
+                        }}
           headerToolbar={{
               center: 'dayGridMonth,timeGridWeek,timeGridDay,listYear',
-              //right:
+              right: 'refreshButton today prev,next',
               //left:
             }}
+          buttonText={{
+            today:    'Hoy',
+            month:    'Mes',
+            week:     'Semana',
+            day:      'Dia',
+            list:     'Lista'            
+          }}
           locale={'es'} 
-          editable 
+          editable={false} // evita el drap and drop de los eventos registrados...  
           //selectable
           slotMinTime= {"07:30:00"}  //inicio de hora 
           slotMaxTime= {"18:00:00"} //fin de hora 
@@ -775,7 +920,12 @@ function Calendar() {
           eventChange={handleChange}  //algun cambio del calendario
           eventAdd={handleNewEvent}  //se ejecuta cuando se agrega un nuevo evento
           events={evento} 
-          datesSet={(args) => listaAgenda(moment(args.startStr).format('YYYY-MM-DD'), moment(args.endStr).format('YYYY-MM-DD'))}  //console.log("###datesSet:", args)}
+          datesSet={(args) => { 
+                        setRangoFecha({...rangoFecha, fechai:moment(args.startStr).format('YYYY-MM-DD') , fechaf:moment(args.endStr).format('YYYY-MM-DD') })
+                        listaAgenda(moment(args.startStr).format('YYYY-MM-DD'), moment(args.endStr).format('YYYY-MM-DD'))
+                      } 
+                    } // esto se ejecuta cada vez que se actualiza el calendario o con el boton next o preview 
+
         /> 
 
       </div>

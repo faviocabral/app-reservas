@@ -37,6 +37,12 @@ export default function Login() {
         setError(true)
         toast.error('Datos incorrectos !!!',{ autoClose:1000 })
       }else{
+        //si la cuenta esta inactiva 
+        if(json.usuario.estado.toLowerCase() !== 'activo'){
+          toast.error('La cuenta esta inactiva !')
+          return 
+
+        }
         setError(false)
         Cookies.set('logginRenting', true, { expires: 1 })
         //toast.success('Datos correctos !!!',{ autoClose:2000 })

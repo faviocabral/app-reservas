@@ -11,7 +11,7 @@ export default async function  handler(req , res ){
 
                 const fecha = req.query.id 
                 await conn1.select()
-                .from('v_usuarios')
+                .from('v_agendarenting_usuarios')
                 .then(async (rows)=>{
                     let users = rows.map(item=>{
                         return({
@@ -49,7 +49,7 @@ export default async function  handler(req , res ){
                       .then(async (id)=> {
                         return res.status(200).json({message:' datos insertados correctamente !!!', usuario: id })
                       })
-                      .catch((err)=>{ return res.status(200).json({message:' hubo un problema !!!', error : err}) })                  
+                      .catch((err)=>{ return res.status(200).json({message:' hubo un problema !!!', error : err , usuario: usuario}) })                  
     
                     //return res.status(200).json({message:' insertar datos !!!' , datos : usuario })
                 } catch (error) {
@@ -69,7 +69,7 @@ export default async function  handler(req , res ){
                     }
                     await conn1('agendarenting_usuarios')
                         .update(usuario)
-                        .where('id', '=' , usuario.id)
+                        .where('id', '=' , req.query.id)
                         .then(async (id)=> {
                         return res.status(200).json({message:' datos modificados correctamente !!!', usuario: id })
                         })

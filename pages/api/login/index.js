@@ -7,13 +7,13 @@ export default async function  handler(req , res ){
             try {
                 const {usuario , password} = req.body
                 let datos = {}
-                await conn1('v_login')
+                await conn1('v_agendarenting_login')
                     .select()
                     .where('user', usuario)
                     .then( async(rows)=>{
                         const match = await bcrypt.compare(password, rows[0].password)
                         if(match)
-                            datos = { nombre : rows[0].nombre, user: rows[0].user , tipo: rows[0].tipo } 
+                            datos = { nombre : rows[0].nombre, user: rows[0].user , tipo: rows[0].tipo , estado: rows[0].estado } 
 
                         res.status(200).json({message:' logging !!!', login : match , usuario: datos })
                     })

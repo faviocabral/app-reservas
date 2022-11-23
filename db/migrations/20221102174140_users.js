@@ -62,7 +62,7 @@
       })
       .createTable('agendarenting_vehiculos', (table)=>{
         table.increments()
-        table.string('nombre').notNullable()
+        table.string('nombre')
         table.string('estado')
         table.string('vin').notNullable()
         table.string('chapa').notNullable()
@@ -82,6 +82,7 @@
         table.string('titulo')
         table.integer('id_estado').unsigned().references('id').inTable('agendarenting_estados')
         table.integer('id_taller').unsigned().references('id').inTable('agendarenting_talleres')
+        table.date('fecha')
         table.date('fechai')
         table.date('fechaf')
         table.string('estado')
@@ -110,7 +111,7 @@
   exports.down = function(knex) {
     return knex.schema
         .dropTable('agendarenting_estados')
-        .dropTable('agendarenting_tipo_usuarios')
+        .dropTable('agendarenting_tipo_usuarios') 
         .dropTable('agendarenting_usuarios')
         .dropTable('agendarenting_marcas')
         .dropTable('agendarenting_modelos')
