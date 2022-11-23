@@ -66,8 +66,11 @@ export default function Usuarios() {
 
         //estos campos no necesitamos actualizar ... 
         if(crud === 'upd'){
-            //setear de vuelta el usuario en la cookies
-            Cookies.set('userRenting' , JSON.stringify( {nombre: usuario.nombre , user: usuario.user , tipo: usuario.tipo} ) , { expires: 1 })
+            let userSession = JSON.parse(Cookies.get('userRenting'))
+            if(usuario.user === userSession.user )
+                //setear de vuelta el usuario en la cookies
+                Cookies.set('userRenting' , JSON.stringify( {nombre: usuario.nombre , user: usuario.user , tipo: usuario.tipo} ) , { expires: 1 })
+
             idUser = usuario.id 
             
             delete usuario.id // en mysql no tiene problema pero si en mssql 

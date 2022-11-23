@@ -432,8 +432,7 @@ function Calendar() {
         return 
       }
 
-      let persona = JSON.stringify( Cookies.get('userRenting') )
-      alert(JSON.stringify( persona))
+      let persona = JSON.parse( Cookies.get('userRenting') )
       const agenda = {
                       cab : {
                         codigo_cliente: data.codigoCliente,
@@ -581,7 +580,7 @@ function Calendar() {
                                     : ''
                                   :(asignados.findIndex(item2 => item2.vin === item.vin ) >= 0 )
                                     ? 'bg-warning' 
-                                    : (listaAsignados.findIndex(item3 => item3.vin === item.vin && moment(agenda?.dateStr) <= moment(item3.fechaf) ) >= 0 )
+                                    : (listaAsignados.findIndex(item3 => item3.vin === item.vin /* && moment(agenda?.dateStr) <= moment(item3.fechaf) */ ) >= 0 )
                                       ? 'bg-success text-white'
                                       : ''
                                   }` } key={item.vin} >
