@@ -46,7 +46,7 @@ export default async function  handler(req , res ){
                       .catch((err)=>{ return res.status(200).json({message:' hubo un problema en el det !!!', error : err}) })
 
                   }) 
-                  .catch((err)=>{ return res.status(200).json({message:' hubo un problema en el cab !!!', error : err}) }) 
+                  .catch((err)=>{ return res.status(400).json({message:' hubo un problema en el cab !!!', error : err}) }) 
                   
                   
                   //return res.status(200).json({message:' insertar datos !!!' , agenda: agenda.cab , vehiculos : agenda.det })
@@ -54,6 +54,33 @@ export default async function  handler(req , res ){
             } catch (error) {
                 return res.status(500).json({message:' hubo un error con el metodo post !!!' , error: error })
             }
+        case 'PUT': 
+
+            try {
+
+                const agenda = req.body 
+                if(agenda.tipoEvento === 'cancelar'){
+                    agenda.id_estado = 4 //estado cancelado ya no aparece en la agenda.
+                }else if(agenda.tipoEvento === 'entregar'){
+                    agenda.id_estado = 2 //estado entregado el vehiculo 
+                }else if(agenda.tipoEvento === 'recibir'){
+                    agenda.id_estado = 3 //estado recibido el vehiculo 
+                }
+
+                delete agenda.tipoEvento // no es parte de la tabla 
+                
+                await conn1('agendarenting_agenda')
+                    .update(agenda)
+                    .where('id', '=' , req.query.id)
+                    .then(async (id)=> {
+                    return res.status(200).json({message:' datos modificados correctamente !!!', nro: req.query.id , agenda: agenda })
+                    })
+                    .catch((err)=>{ return res.status(400).json({message:' hubo un problemaaaa !!!', error : err}) })      
+                
+            } catch (error) {
+                return res.status(500).json({message:' hubo un error con el metodo post !!!' , error: error })                
+            }
+
         default:
             return res.status(405).json({message:' metodo no valido !!!'})
     }

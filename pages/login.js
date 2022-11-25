@@ -76,13 +76,13 @@ export default function Login() {
               <div className="input-group mb-3">
                 <input type="text" ref={userInput} className={`form-control`} autoComplete="off" placeholder="Usuario" name="usuario" onChange={updateData} required/>
                   <div className="input-group-text">
-                  <i class="bi bi-person-fill"></i>
+                  <i className="bi bi-person-fill"></i>
                   </div>
               </div>
               <div className="input-group mb-3">
                 <input type="password" className={(!error)?`form-control`:'form-control is-invalid'} autoComplete="off" name="password" placeholder="Contraseña" onChange={updateData} required/>
                   <div className="input-group-text">
-                  <i class="bi bi-lock-fill"></i>
+                  <i className="bi bi-lock-fill"></i>
                   </div>
               </div>
               <div className="row">

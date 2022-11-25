@@ -22,28 +22,16 @@ const MySwal = withReactContent(Swal)
 
 function Calendar() {
 
+  /*
   const [evento , setEvento ] = useState([
     //{ title: 'EN USO...' , date : '2022-10-04' , overlap:false , display:'background' },
     { id:1, title: 'event 1', date: '2022-10-01' , start: '2022-10-17' , end: '2022-10-20' },
     { id:2, title: 'event 2', start: '2022-10-10 08:00', end: '2022-10-10 18:00' , color: 'green' },
     { id:3, title: 'event 3', date: '2022-10-10',color  : '#000', valor: 'mas datos', vinculos:[{agenda: 1 , vehiculo: 'kia rio'}, {agenda: 2 , vehiculo: 'kia picanto'}] },
   ])
-
-  //VEHICULOS DISPONIBLES
-  /*
-  const vehiculos = [
-    { marca: 'RENTING - KIA', modelo:'NIRO', chapa: 'AAGV085', vin:'KNACB81CGM5423978', anho:2021},
-    { marca: 'RENTING - KIA', modelo:'SOLUTO', chapa: 'AAGZ676', vin:'LJD0AA29BN0150565', anho:2021},
-    { marca: 'RENTING - KIA', modelo:'SOLUTO', chapa: 'AAHT600', vin:'LJD0AA29BN0152796', anho:2021},
-    { marca: 'RENTING - KIA', modelo:'SOLUTO', chapa: 'AAHT593', vin:'LJD0AA29BN0152789', anho:2021},
-    { marca: 'RENTING - KIA', modelo:'SOLUTO', chapa: 'AAHT595', vin:'LJD0AA29BN0152734', anho:2021},
-    { marca: 'RENTING - KIA', modelo:'SOLUTO', chapa: 'AAHT598', vin:'LJD0AA29BN0152731', anho:2021},
-    { marca: 'RENTING - KIA', modelo:'SOLUTO', chapa: 'AAHT597', vin:'LJD0AA29BN0152799', anho:2021},
-    { marca: 'RENTING - KIA', modelo:'SOLUTO', chapa: 'AAHT599', vin:'LJD0AA29BN0152748', anho:2021},
-    { marca: 'RENTING - NISSAN', modelo:'VERSA DRIVE', chapa: 'AAGV083', vin:'94DBCAN17MB101331', anho:2021},
-    { marca: 'RENTING - NISSAN', modelo:'KICKS', chapa: 'AAGV091', vin:'94DFCAO15NB201839', anho:2022},
-  ]
-  */
+*/
+const [evento , setEvento ] = useState([])
+const [otroEventos , setOtroEventos ] = useState([])
    //MODELOS HABILITADOS 
   const modelos = [
     {modelo: 'Kia Niro', foto: 'https://www.kia.com/content/dam/kwcms/kme/global/en/assets/vehicles/niro-sg2/discover/kia-niro-ev-my23-actionpanel-get-yours.jpg'},
@@ -84,44 +72,48 @@ function Calendar() {
   const [authCall ,setAuthCall] = useState(true)
   const [rangoFecha, setRangoFecha] = useState({fechai: '', fechaf: ''})
 
-  ////////////////////////////////
+  //////////////////////////////// 
   // SETEOS INICIALES DEL CALENDARIO
   ////////////////////////////////
   useEffect( () => { 
+    let userSocket= JSON.parse(Cookies.get('userRenting')) 
+    socket.emit('usuario', {id: socket.id , user: userSocket , agenda: {} }) 
 
-    socket.on('connect', () => {
-      console.log('connected' , socket.id)
-      if(localStorage.hasOwnProperty('addEvent')){
-        //listOtherEvents()
-      } 
-    })
+      //verificamos si existen otras agendas en curso y bloquear para que no se puedan cargar datos en la fecha.
+      /*
+      socket.on('connect', () => {
+        console.log('connected' , socket.id)
+        if(localStorage.hasOwnProperty('addEvent')){
+          //listOtherEvents()
 
-    socket.on("usuarios", (msg)=>{
-      console.log(msg)
-    })
-
+        } 
+      })
+    */
+    
     //cuando estan agendando desde otro lugar 
-    socket.on('addingEvent', (event)=>{
-      let list = JSON.parse(localStorage.getItem('addEvent'))
-      event = JSON.parse(event) //convertimos a array
-      toast(` ${event.title} esta registrando en la fecha ${event.fecha} `)
-      list.push(event)
-      localStorage.setItem("addEvent", JSON.stringify(list))
-      setEvento( [...evento, event ])
+    socket.on('addingEvent', async(event )=>{ 
+
+     toast(` ${event.agenda.title} esta registrando en la fecha ${event.agenda.fecha} `)
+     //refresh() 
+     let fechai = localStorage.getItem('fechai') 
+     let fechaf =  localStorage.getItem('fechaf') 
+     listaAgenda(fechai , fechaf )
+     //setEvento([...res, event.agenda])
+
     })
 
+/*
     //cuando estan agendando desde otro lugar 
-    socket.on('changingEvent', (event)=>{
-      setEvento( event )
-    })
-
+    socket.on('changingEvent', (event)=>{ 
+      //setEvento( event ) 
+    }) 
+*/
     //cuando cancela el evento
-    socket.on('cancelingEvent', (event)=>{
-      let list = JSON.parse(localStorage.getItem("addEvent")) // listamos todos los eventos de otros agentes
-      event = JSON.parse(event) //convertimos a array
-      list = list.filter(item => item.fecha !== event.fecha ) // filtramos el evento cancelado de la lista 
-      localStorage.setItem("addEvent", JSON.stringify(list)) // asignar la lista actualizada
-      setEvento( evento.filter(item => item.fecha !== event.fecha))
+    socket.on('cancelingEvent', async(event)=>{
+
+      let fechai = localStorage.getItem('fechai') 
+      let fechaf =  localStorage.getItem('fechaf') 
+      await listaAgenda(fechai , fechaf )
     })
 
     //cuando el evento fue agregado
@@ -132,33 +124,23 @@ function Calendar() {
       list = list.filter(item => item.fecha !== event.fecha ) // filtramos el evento cancelado de la lista 
       localStorage.setItem("addEvent", JSON.stringify(list)) // asignar la lista actualizada
       localStorage.setItem("eventos", JSON.stringify(event)) // guardamos el evento grabado
-      setBaseDatos([...baseDatos, event ])
-      setEvento( [...evento, event ])
+      //setBaseDatos([...baseDatos, event ])
+      //setEvento( [...evento, event ])
     })
 
-    //inicializar el evento... 
-    if(!localStorage.hasOwnProperty('addEvent')){
-      localStorage.setItem("addEvent", "[]")
-    }      
-    localStorage.setItem("addEvent", "[]")
-
-    //caso de reiniciar la aplicacion se actualiza desde aqui el render 
-    if(baseDatos.length == 0 ){
-      if(!localStorage.hasOwnProperty('eventos')){
-        localStorage.setItem("eventos", "[]")
-      }  
-      let base = JSON.parse( localStorage.getItem('eventos' ))
-      setBaseDatos( base )
-      let misAgendas =[] 
-      evento.forEach(item => misAgendas.push(item ))
-      base.forEach(item   => misAgendas.push(item ))
-      setEvento(misAgendas)
-      //setEvento([...evento, item ])
-    }
 
     listaVehiculos()
     talleres()
-    //listaAgenda(  )
+
+    return () => {
+      socket.off('connect');
+      socket.off('disconnect');
+      socket.off('addingEvent');
+      socket.off('changingEvent');
+      socket.off('cancelingEvent');
+           
+    };
+
 
   }, []);
 
@@ -212,34 +194,66 @@ function Calendar() {
       .catch(err => console.log(err))      
     }
 
+    let colorEstado = [ 
+      {color: 'sin color'},
+      {color: '#0275d8' , estado: 'agendado'},
+      {color: '#5bc0de' , estado: 'entregado'},
+      {color: '#5cb85c' , estado: 'recibido'},
+    ]
+    let otroColorEstado = [ 
+      {color: 'sin color'},
+      {color: '#62a1fe' , estado: 'agendado'},
+      {color: '#62ddf5' , estado: 'entregado'},
+      {color: '#6ab190' , estado: 'recibido'},
+    ]
+
+
     const listaAgenda= async (fechai , fechaf) =>{
+
+      localStorage.setItem("fechai" , fechai)
+      localStorage.setItem("fechaf" , fechaf)
+      let myUser = JSON.parse(Cookies.get('userRenting'))
       await fetch(`api/calendar/rango?fechai=${fechai}&fechaf=${fechaf}` )
       .then(response => response.json()) 
       .then( async(json) => { 
         await fetch('api/vehiculos') 
           .then(response => response.json()) 
-          .then( async( vhe ) => {
+          .then( async( vhe ) => { 
             let lista = json.agenda.map(item => {  
               return({...item,
                 date: item.fecha,
                 start: item.fechai,
                 end: item.fechaf,
                 title: item.titulo,
-                //backgroundColor: '#5cb85c',
-                //borderColor: '#5cb85c',
+                backgroundColor: (item.user_ins === myUser.user )? colorEstado[item.id_estado].color : otroColorEstado[item.id_estado].color , 
+                borderColor:  (item.user_ins === myUser.user )? colorEstado[item.id_estado].color : otroColorEstado[item.id_estado].color  ,
                 //allDay: true,
                 classNames: 'bg-gradient-success',
                 vehiculos: vhe.rows.filter(item2 => item.det.map(item3 => item3.vin ).includes(item2.vin) )
               })
             })
-            console.log((lista))
-            setEvento(lista)
             setBaseDatos(lista)
+              // caso qeu alquien este agendando bloquee la pagina... 
+              await fetch(`http://localhost:8000/getOtherAgenda` )
+              .then(response => response.json()) 
+              .then((result) => { 
+                           
+                if( result.allClients.findIndex(item=> item.user.user !== myUser.user && Object.keys(item.agenda).length > 0 ) >= 0 ){ // si existen otras agenda traer los datos 
+                  
+                  result.allClients
+                  .filter(item => item.user.user !== myUser.user  )
+                  .forEach(item=> lista.push(item.agenda) )
+                  setEvento(lista)
+                }else{
+                  setEvento(lista)
+                }
+              })
+
           })
        
       })
       .catch(err => console.log(err))
-
+      
     }
 
     const talleres = async()=>{
@@ -321,6 +335,16 @@ function Calendar() {
     /// NUEVO EVENTO 
     /////////////////////////////////////////////////////////////////////////// 
     const handleDateClick = (arg) => { 
+      if( evento.findIndex(item => item.fecha === arg.dateStr && item.title.includes('el usuario') ) >= 0 ){
+        toast.warning('Hay un usuario registrando en esta fecha !!! ')
+        return 
+      }
+
+      if(moment(arg.dateStr).weekday() === 0 ){
+        toast.error('No puede agendar dias Domingo !!!')
+        return 
+      } // si es domingo 
+
 
       listaVehiculos() 
       talleres() 
@@ -330,23 +354,10 @@ function Calendar() {
       dataInterface.fechai = arg.dateStr 
       dataInterface.fechaf = arg.dateStr 
       setData(dataInterface) 
-      //setData({...data, fechai: arg.dateStr , fechaf: arg.dateStr}) 
-      let eventos = [] 
-      if(localStorage.hasOwnProperty('addEvent')){ 
-        eventos = JSON.parse( localStorage.getItem('addEvent')) 
-      } 
 
-      //si existe algun evento bloquea... 
-      if(eventos?.findIndex(item => item.fecha === arg.dateStr) >= 0){
-        let myEvento = evento.find(item => item.fecha === arg.dateStr)
-        Swal.fire(` ${ String(myEvento.title) } \n en esta fecha ${myEvento.fecha } ` )
-        return 
-      }
-      //PARA BLOQUEAR CAMO DE REGISTROS EN OTROS CALENARIOS... 
-      let newEvent = {title: `el usuario ${socket.id} \n esta registrando `, date: arg.dateStr , startStr: arg.dateStr, endtStr: arg.dateStr , fecha: arg.dateStr , overlap:false , display:'background' , color: 'yellow' } 
-      eventos.push(newEvent)
-      socket.emit("addEvent", JSON.stringify(newEvent) )
-      console.log(arg)
+      let myUser = JSON.parse(Cookies.get('userRenting'))
+      let newEvent = {title: `el usuario ${myUser.user} \n esta registrando `, date: arg.dateStr , startStr: arg.dateStr, endtStr: arg.dateStr , fecha: arg.dateStr, display:'list-item' , textColor: 'black', color:'red' , editable: 'false' , det:[ {vin: ''} ] } /// overlap:false , display:'background' , color: 'yellow' }
+      socket.emit('addEvent', {id: socket.id , agenda: newEvent  })
 
       ///////////////////////////////////////////////
       //ABRIR EL MODAL PARA REGISTRAR LOS DATOS
@@ -359,6 +370,11 @@ function Calendar() {
     // PARA VER DATOS DEL EVENTO
     ////////////////////////////////////////////////////////////////////
     const handleEventClick = (info) => { 
+
+      if( evento.findIndex(item => item.fecha === info.event.startStr && item.title.includes('el usuario') ) >= 0 ){
+        toast.warning('Hay un usuario registrando en esta fecha !!! ')
+        return 
+      }
       console.log(info)
       //alert(info.event.title)
       //para habilitar botonoes y permisos segun roles 
@@ -366,10 +382,10 @@ function Calendar() {
 
       //para controlar habilitaciones de botones tanto para callcenter y asesores y supervisores
       let control = JSON.parse(Cookies.get('userRenting')) 
-      if( ('asesor administrador supervisor').includes( control.tipo.toLowerCase() ))
+      if( ('asesor administrador supervisor').includes( control.tipo.toLowerCase() ) )
         setAuthAsesor(false)
 
-      if( ('call center administrador supervisor').includes( control.tipo.toLowerCase() ))
+      if( ('call center administrador supervisor').includes( control.tipo.toLowerCase() ) && data.user_ins !== user.user )
         setAuthCall(false)
 
       setAgenda({dateStr: info.event.startStr, tipoEvento: 'upd' , title: info.event.title })
@@ -380,7 +396,9 @@ function Calendar() {
         codigoCliente: info.event.extendedProps.codigo_cliente, 
         nombreCliente: info.event.extendedProps.nombre_cliente, 
         taller: info.event.extendedProps.id_taller, 
-        id: info.event.extendedProps.id_agenda
+        id: info.event.extendedProps.id_agenda,
+        id_estado: info.event.extendedProps.id_estado,
+        user_ins: info.event.extendedProps.user_ins,
       }
       ///info.event.extendedProps.
       setData(myEvent)
@@ -467,7 +485,8 @@ function Calendar() {
       .then(response => response.json()) 
       .then(json => {
         Swal.close()
-        alert(JSON.stringify(json))
+        toast.success('Agenda guardada con Exito!!')        
+        //alert(JSON.stringify(json))
         let fecha = data.fechai 
         setAsignados([]) // limpiamos lista de vehiculos 
         setData(dataInterface) //limpiamos los datos de la agenda
@@ -483,7 +502,8 @@ function Calendar() {
     const cancelarEvento = ()=>{
 
       //SE CANCELO EL EVENTO
-      socket.emit("cancelEvent", JSON.stringify({title: ' el usuario '+ socket.id+' cancelo un evento ', date: agenda.dateStr , fecha: agenda.dateStr }))
+      socket.emit("cancelEvent", {id: socket.id})
+      //socket.emit("cancelEvent", JSON.stringify({title: ' el usuario '+ socket.id+' cancelo un evento ', date: agenda.dateStr , fecha: agenda.dateStr }))
       setAgenda({})
       setListaAsignados([])
       toggle()
@@ -491,19 +511,111 @@ function Calendar() {
 
     const cancelarAgenda = async()=>{
       
+        Swal.fire({
+          title: 'Esta seguro que desea cancelar la Agenda?',
+          //text: "Desea cancelar esta agenda?",
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonColor: '#3085d6',
+          cancelButtonColor: '#d33',
+          confirmButtonText: 'Si',    
+          cancelButtonText: 'No',
+        }).then(async (result)=>{
+          if(result.isConfirmed){
+
+            Swal.showLoading()
+            let usuario = await JSON.parse(Cookies.get('userRenting'))
+    
+            let datos = { tipoEvento: 'cancelar' , user_upd: usuario.user , fecha_upd: moment().format('YYYY-MM-DD HH:mm:ss') }
+            await fetch('api/calendar?id=' + data.id , {
+              method: "PUT",
+              body: JSON.stringify(datos ),
+              headers: {"Content-type": "application/json; charset=UTF-8"}
+            })
+            .then(response => response.json()) 
+            .then(json => { 
+              toast.success('Agenda Cancelada !!! ') 
+              Swal.close()
+              setAsignados([]) // limpiamos lista de vehiculos 
+              setData(dataInterface) //limpiamos los datos de la agenda
+              setListaCliente([]) //limpiamos el buscador
+              toggle() //cerramos el modal de la agendamiento.
+              listaAgenda( rangoFecha.fechai , rangoFecha.fechaf )// recuperamos las agenda del mes
+    
+            })
+            .catch(err => console.log(err))
+          }
+        })
+        
+    }
+
+    const entregarVehiculo = async()=>{
+      
+      Swal.fire({
+        title: 'Esta seguro de entregar el vehiculo?',
+        //text: "Desea cancelar esta agenda?",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Si',    
+        cancelButtonText: 'No',
+      }).then(async (result)=>{
+        if(result.isConfirmed){
+
+          Swal.showLoading()
+          let usuario = await JSON.parse(Cookies.get('userRenting'))
+  
+          let datos = { tipoEvento: 'entregar' , user_upd: usuario.user , fecha_upd: moment().format('YYYY-MM-DD HH:mm:ss') }
+          await fetch('api/calendar?id=' + data.id , {
+            method: "PUT",
+            body: JSON.stringify(datos ),
+            headers: {"Content-type": "application/json; charset=UTF-8"}
+          })
+          .then(response => response.json()) 
+          .then(json => { 
+            toast.success('Agenda Cancelada !!! ') 
+            Swal.close()
+            setAsignados([]) // limpiamos lista de vehiculos 
+            setData(dataInterface) //limpiamos los datos de la agenda
+            setListaCliente([]) //limpiamos el buscador
+            toggle() //cerramos el modal de la agendamiento.
+            listaAgenda( rangoFecha.fechai , rangoFecha.fechaf )// recuperamos las agenda del mes
+  
+          })
+          .catch(err => console.log(err))
+        }
+      })
+      
+  }
+
+
+  const recibirVehiculo = async()=>{
+      
+    Swal.fire({
+      title: 'Esta seguro de Recibir el vehiculo?',
+      //text: "Desea cancelar esta agenda?",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+      confirmButtonText: 'Si',    
+      cancelButtonText: 'No',
+    }).then(async (result)=>{
+      if(result.isConfirmed){
+
         Swal.showLoading()
         let usuario = await JSON.parse(Cookies.get('userRenting'))
-        let datos = { id: data.id , tipoEvento: 'cancelar' , user: usuario.user }
-        alert(JSON.stringify(data))
-        await fetch('api/calendar/' + data.id , {
+
+        let datos = { tipoEvento: 'recibir' , user_upd: usuario.user , fecha_upd: moment().format('YYYY-MM-DD HH:mm:ss') }
+        await fetch('api/calendar?id=' + data.id , {
           method: "PUT",
           body: JSON.stringify(datos ),
           headers: {"Content-type": "application/json; charset=UTF-8"}
         })
         .then(response => response.json()) 
-        .then(json => {
-          toast.success('Agenda Cancelada !!! ')
-          alert(JSON.stringify(json))
+        .then(json => { 
+          toast.success('Agenda Cancelada !!! ') 
           Swal.close()
           setAsignados([]) // limpiamos lista de vehiculos 
           setData(dataInterface) //limpiamos los datos de la agenda
@@ -513,9 +625,11 @@ function Calendar() {
 
         })
         .catch(err => console.log(err))
+      }
+    })
+    
+}
 
-        
-    }
 
     const addDias = ( dias )=>{
 
@@ -532,7 +646,7 @@ function Calendar() {
       return (
         <div>
           <Modal isOpen={modal2} fade={false} centered={true}  size='xl' style={{minWidth:'95%'}}>
-            <ModalHeader toggle={()=>cancelarEvento()} style={{paddingTop:'5px', paddingBottom:'2px'}}> {(agenda?.tipoEvento === 'ins')? 'Nuevo Evento' : 'Modificar Evento' } | { moment(agenda?.dateStr).format('YYYY-MM-DD') } |  {(agenda?.tipoEvento === 'upd'? 'Agendado' : '' )} </ModalHeader>
+            <ModalHeader toggle={()=>cancelarEvento()} style={{paddingTop:'5px', paddingBottom:'2px'}}> {(agenda?.tipoEvento === 'ins')? 'Nuevo Evento' : 'Modificar Evento' } | { moment(agenda?.dateStr).format('YYYY-MM-DD') } |  {(agenda?.tipoEvento === 'upd'? 'Agendado' : '' )} | {data.user_ins} </ModalHeader>
             <ModalBody>
               <div className="container-fluid">
                 <div className='row'>
@@ -592,20 +706,17 @@ function Calendar() {
                                   <td>{item.anho}</td>
                                   <td>{item.vin}</td>
                                   <td style={{paddingRight: '0px', textAlign:'right'}}>
-                                      {
-                                        (agenda?.tipoEvento === 'upd')
-                                        ?(asignados.findIndex(item2 => item2.vin === item.vin ) >= 0 )
+                                    {
+                                      (agenda?.tipoEvento === 'upd')
+                                      ?(asignados.findIndex(item2 => item2.vin === item.vin ) >= 0 )
+                                        ?<span><i className="bi bi-check-lg" style={{fontSize:'24px', position:'relative', left:'-10px'}} ></i></span>
+                                        : <span></span>
+                                      :(agenda.tipoEvento === 'ins')
+                                        ?(listaAsignados.findIndex(item3 => item3.vin === item.vin ) >= 0 )
                                           ?<span><i className="bi bi-check-lg" style={{fontSize:'24px', position:'relative', left:'-10px'}} ></i></span>
-                                          : <span></span>
-                                        :(baseDatos.filter(item2 => item2.fecha === agenda?.dateStr )?.map(item => item.vehiculos )?.flat().findIndex(item3 => item3.vin === item.vin) >= 0 )
-                                          ? <span><i className="bi bi-check-lg" style={{fontSize:'24px', position:'relative', left:'-10px'}} ></i></span>
-                                          : (asignados.findIndex(item2 => item2.vin === item.vin ) >= 0 )
-                                            ?<span></span>
-                                            :(agenda.tipoEvento === 'ins')
-                                              ?(listaAsignados.findIndex(item3 => item3.vin === item.vin ) >= 0 )
-                                                ?<span><i className="bi bi-check-lg" style={{fontSize:'24px', position:'relative', left:'-10px'}} ></i></span>
-                                                :<i className="bi bi-arrow-right btn btn-warning font-weight-bold px-2 py-0 " style={{fontSize:'20px'}} onClick={()=> asignarVehiculo(item.vin) }></i> 
-                                              :<span></span>
+                                          :<i className="bi bi-arrow-right btn btn-warning font-weight-bold px-2 py-0 " style={{fontSize:'20px'}} onClick={()=> asignarVehiculo(item.vin) }></i> 
+                                        :<span></span>
+                                              
                                       }
                                   </td>
                                 </tr>
@@ -618,11 +729,11 @@ function Calendar() {
                   </div>
                   <div className="col-6">
                     <h3>Datos de la Agenda</h3>
-                    <Stepper activeStep={ (agenda.tipoEvento === 'upd')? 0 : -1 } style={{padding:'0px'}}>
+                    <Stepper activeStep={ (agenda.tipoEvento === 'upd')? (data.id_estado -1) : -1 } style={{padding:'0px'}}>
                       <Step label="Agendado" />
                       <Step label="Entregado" />
                       <Step label="Recibido" />
-                    </Stepper>                  
+                    </Stepper> 
 
                     <form onSubmit={e => e.preventDefault} className="">
                       <div className='row'>
@@ -665,15 +776,15 @@ function Calendar() {
                       </div>
                       <div className='row'>
                           <div className="input-group mt-3 mb-3"> 
-                            <span class="input-group-text"><b>Cliente</b></span>
-                            <button className="btn btn-primary " onClick={ buscarCliente } data-bs-toggle="dropdown" disabled={(agenda?.tipoEvento === 'upd')?true:false } > <b> <i class="bi bi-search"></i> </b> </button>
+                            <span className="input-group-text"><b>Cliente</b></span>
+                            <button className="btn btn-primary " onClick={ buscarCliente } data-bs-toggle="dropdown" disabled={(agenda?.tipoEvento === 'upd')?true:false } > <b> <i className="bi bi-search"></i> </b> </button>
                             <input type="text" className="form-control" placeholder="codigo cliente..." name="codigoCliente" ref={codigoCliRef} onChange={ updateData } value={data?.codigoCliente} readOnly/>
                             <input type="text" className="form-control" id="nombreCliente" placeholder="Nombre de Cliente" name="nombreCliente" ref={nombreCliRef} style={{width:'35%'}} onChange={ updateData } value={data?.nombreCliente} readOnly/>
                           </div>
 
                           <div className="input-group mt-3 mb-3"> 
-                          <span class="input-group-text"><b>Taller</b> &nbsp;&nbsp;&nbsp;</span>
-                          <select class="form-select" aria-label="Default select example" name="taller" onChange={ updateData }  value={data?.taller} disabled={(agenda?.tipoEvento === 'upd')?true:false }>
+                          <span className="input-group-text"><b>Taller</b> &nbsp;&nbsp;&nbsp;</span>
+                          <select className="form-select" aria-label="Default select example" name="taller" onChange={ updateData }  value={data?.taller} disabled={(agenda?.tipoEvento === 'upd')?true:false }>
                             <option selected>Taller ?</option>
                             { 
                               taller?.map(item =>{
@@ -745,7 +856,7 @@ function Calendar() {
                       <div className="row">
                         <form onSubmit={recuperarCliente}>
                             <div className="input-group mt-3 mb-3"> 
-                              <button className="btn btn-primary "  type="btn" > <b> <i class="bi bi-search"></i> </b> </button>
+                              <button className="btn btn-primary "  type="btn" > <b> <i className="bi bi-search"></i> </b> </button>
                               <input type="text" className="form-control" name="buscar" ref={buscarRef} /> 
                             </div>
                         </form>
@@ -786,14 +897,14 @@ function Calendar() {
                 (agenda.tipoEvento === 'upd') 
                 ? 
                     <> 
-                    <Button color="info"  disabled={authAsesor} > Entregado </Button> 
-                    <Button color="dark"  disabled={authAsesor} style={{marginRight:'25px'}}> Recibido </Button> 
+                    <Button color="info"  disabled={authAsesor || data.id_estado === 2 || data.id_estado > 2 || (data.user_ins !== user.user && 'administrador supervisor'.includes(user.user.toLocaleLowerCase()) ) } onClick={entregarVehiculo}> Entregado </Button> 
+                    <Button color="success"  disabled={authAsesor || data.id_estado !== 2 || (data.user_ins !== user.user && 'administrador supervisor'.includes(user.user.toLocaleLowerCase()) ) } style={{marginRight:'25px'}} onClick={recibirVehiculo}> Recibido </Button> 
                     {/* <Button color="secondary" disabled={authCall}> Re-Agendar </Button> */}
-                    <Button color="warning"   disabled={authCall} style={{marginRight:'25px'}} onClick={cancelarAgenda}> Cancelar Agenda</Button>
+                    <Button color="warning"  disabled={authCall || ('2 3').includes(data.id_estado) || (data.user_ins !== user.user && 'administrador supervisor'.includes(user.user.toLocaleLowerCase()) ) } style={{marginRight:'25px'}} onClick={cancelarAgenda}> Cancelar Agenda</Button>
                     </>
                 : <span></span>
                }             
-
+  
               <Button color="primary" onClick={()=> crearEvento()} disabled={(asignados.length === 0 || agenda.tipoEvento === 'upd' ? true : false)} > Agendar</Button>
               <Button color="danger" onClick={()=>cancelarEvento()}> Salir</Button>
             </ModalFooter>
@@ -828,7 +939,8 @@ function Calendar() {
       //alert(JSON.stringify(asignados))
       let lista = [] 
       asignados?.forEach(item3=>{
-        lista = evento.map(item =>{ 
+        lista = evento
+        .map(item =>{ 
           return({ 
               fechai:item.fechai, 
               diff:(fechaiForm < item.fechai )? moment(fechafForm).diff(item.fechai , 'days') :  -1, //compara lista de eventos contra la fecha inicio del formulario 
@@ -872,7 +984,7 @@ function Calendar() {
 
     const refreshCalendar= ()=>{
       listaAgenda(rangoFecha.fechai, rangoFecha.fechaf)
-      toast.info('Agenda actualizada !')
+      //toast.info('Agenda actualizada !' , { autoClose: 700} )
     }
 
   return (

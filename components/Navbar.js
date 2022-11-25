@@ -34,6 +34,7 @@ function Navbar() {
   }
 
   const isAuth = () => {
+
     let control = JSON.parse(Cookies.get('userRenting')) 
     if( ('administrador supervisor').includes( control.tipo.toLowerCase() ))
       setAuth(true)
@@ -89,15 +90,15 @@ function Navbar() {
         <ul className="nav col-12 col-lg-auto my-2 justify-content-end my-md-0 text-small">
 
           <li>
-          <div class="dropdown">
+          <div className="dropdown">
               <a href="#" className="nav-link text-secondary pt-0 pb-1 dropdown-toggle" data-bs-toggle="dropdown" onClick={()=> setDropdown( (dropdown === '')? 'show':'' ) } >
                 <i className="bi bi-person-fill d-block mx-auto text-center text-white elevation-1" style={{ fontSize: 30, height: "40px" }} ></i>
                 <span className="text-white">{contextLogin.usuario.nombre}</span>
               </a>
-              <ul class={`dropdown-menu ${dropdown}`} >
+              <ul className={`dropdown-menu ${dropdown}`} >
                 <h5 className="text-center">DATOS</h5>
-                <li><a class="dropdown-item" href="#"><b>Usuario: </b> {contextLogin.usuario.user}</a></li>
-                <li><a class="dropdown-item" href="#"><b>Role: </b> {contextLogin.usuario.tipo}</a></li>
+                <li><a className="dropdown-item" href="#"><b>Usuario: </b> {contextLogin.usuario.user}</a></li>
+                <li><a className="dropdown-item" href="#"><b>Role: </b> {contextLogin.usuario.tipo}</a></li>
               </ul>              
             </div>  
           </li>
