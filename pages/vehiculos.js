@@ -1,20 +1,34 @@
 import React, {useState , useEffect , useRef}  from 'react'
 import Layout from '../components/Layout'
+import { toast } from 'react-toastify'
+import Swal from 'sweetalert2'
 
 function Vehiculos() {
 
   const [listaVehiculos, setlistaVehiculos] = useState([])
   const [vehiculo, setVehiculo] = useState({})
-  const [crud, setCrud] = useState('')
+  const [talleres, setTalleres] = useState([])
+  const [modelos, setModelos] = useState([])
+  const [marcas, setMarcas] = useState([])
+  const [crud, setCrud] = useState('ins')
   const nombreRef = useRef()
   useEffect(()=>{
 
     listarVehiculos()
+    listarTalleres()
+    listarMarcas()
+    listarModelos()
 
-  })
-  const cancelar = ()=>{
-    
+  },[])
+
+  const init = ()=>{
+    setVehiculo({})
+    setCrud('ins')
+    nombreRef.current.focus()
+    document.getElementById('form1').reset();    
+
   }
+
   const listarVehiculos = async()=>{
       try {
         await fetch('api/vehiculos' )
@@ -23,14 +37,79 @@ function Vehiculos() {
                 setlistaVehiculos(rows.rows)
               })
     } catch (error) {
-        console.log('hubo un error el recuperar usuarios' , error)            
+        console.log('hubo un error el recuperar vehiculos' , error)            
     }
   }
 
-  const handleSubmit = ()=>{
-    alert('submit')
-  }
+  const listarTalleres = async()=>{
+        try {
+        await fetch('api/talleres' )
+            .then(response => response.json()) 
+            .then(rows => {  
+                setTalleres(rows.rows)
+                })
+        } catch (error) {
+            console.log('hubo un error el recuperar talleres' , error)            
+        }
+    }
 
+    const listarMarcas = async()=>{
+        try {
+        await fetch('api/marcas' )
+            .then(response => response.json()) 
+            .then(rows => {  
+                setMarcas(rows.rows)
+                })
+        } catch (error) {
+            console.log('hubo un error el recuperar marcas' , error)            
+        }
+    }
+
+    const listarModelos = async()=>{
+        try {
+        await fetch('api/modelos' )
+            .then(response => response.json()) 
+            .then(rows => {  
+                setModelos(rows.rows)
+                })
+        } catch (error) {
+            console.log('hubo un error el recuperar modelos' , error)            
+        }
+    }
+
+    const editar=(item)=>{
+        //alert(JSON.stringify(item) )
+        setVehiculo(item)
+        setCrud('upd')
+    }
+
+  const handleSubmit = async (e)=>{
+    e.preventDefault() 
+    const formData = new FormData(e.target) 
+    const datos = Object.fromEntries(formData) 
+    
+    if( Object.values(datos).findIndex((item, index) => item.length === 0 && index > 0 ) > 0 ){ 
+        toast.warning('Debe completar todos los campos !!! ', { autoClose: 700}) 
+    }else{
+        const idVehiculo = datos.id 
+        delete datos.id 
+        Swal.showLoading()
+        let url =  (crud === 'ins')? 'api/vehiculos'  : `api/vehiculos?id=${idVehiculo}`
+        await fetch( url  , {
+            method: (crud === 'ins')?"POST": "PUT",
+            body: JSON.stringify(datos),
+            headers: {"Content-type": "application/json; charset=UTF-8"}
+        })
+        .then(response => response.json()) 
+        .then(json => {
+            toast.success('Datos Grabados correctamente !!! ', { autoClose: 700} )
+            Swal.close()
+            init()
+            listarVehiculos()
+        })
+        .catch(err => alert(err))
+    }
+  }
 
   //para setear los campos del form y enviar al backend 
   const updateData = e => {
@@ -47,7 +126,7 @@ function Vehiculos() {
         <div className="row">
           <div className="col">
 
-            <form noValidate onSubmit={handleSubmit} >
+            <form noValidate onSubmit={handleSubmit} id="form1" >
               <div className="row">
 
                       <h3 style={{marginLeft:'20px'}}>Vehiculos</h3>
@@ -72,14 +151,14 @@ function Vehiculos() {
                   <div className="col"> 
                       <div class="form-check mb-3"> 
                           <label className="form-check-label"><b>Vin</b></label> 
-                          <input type="text" className="form-control" placeholder="Nombre usuario" name="user" autoComplete="off" value={vehiculo?.vin} onChange={ updateData } /> 
+                          <input type="text" className="form-control" placeholder="Nombre usuario" name="vin" autoComplete="off" value={vehiculo?.vin} onChange={ updateData } /> 
                       </div> 
                   </div> 
 
                   <div className="col">
                   <div class="form-check mb-3">
                           <label className="form-check-label"><b>Chapa</b></label>
-                          <input type="text" className="form-control" placeholder="Nombre usuario" name="password" value={vehiculo?.chapa} autoComplete="off" onChange={ updateData } />
+                          <input type="text" className="form-control" placeholder="Nombre usuario" name="chapa" value={vehiculo?.chapa} autoComplete="off" onChange={ updateData } />
                       </div>     
                   </div>
 
@@ -90,17 +169,22 @@ function Vehiculos() {
                   <div className="col"> 
                       <div class="form-check mb-3"> 
                           <label className="form-check-label"><b>Anho</b></label> 
-                          <input type="text" className="form-control" placeholder="Nombre usuario" name="user" autoComplete="off" value={vehiculo?.anho} onChange={ updateData } /> 
+                          <input type="text" className="form-control" placeholder="Nombre usuario" name="anho" autoComplete="off" value={vehiculo?.anho} onChange={ updateData } /> 
                       </div> 
                   </div> 
 
                   <div className="col">
                     <div class="form-check mb-3">
                       <label className="form-check-label"><b>Marca</b></label>
-                      <select class="form-select" aria-label="Default select example" name="id_tipo_usuario" value={vehiculo?.id_marca } onChange={ updateData } >
-                          <option selected value="">Kia</option>
-                          <option value="">Nissan</option>
-                      </select>
+                      <select class="form-select" aria-label="Default select example" name="id_marca" value={vehiculo?.id_marca } onChange={ updateData } >
+                        {
+                            marcas.map(item=>{
+                                return (
+                                    <option key={item.id} value={item.id}> {item.nombre} </option>
+                                )
+                            })
+                        }
+                    </select>
                     </div>     
                   </div>
 
@@ -111,9 +195,14 @@ function Vehiculos() {
                   <div className="col">
                       <div class="form-check mb-3">
                           <label className="form-check-label"><b>Modelo</b></label>
-                          <select class="form-select" aria-label="Default select example" name="id_tipo_usuario" value={vehiculo?.id_modelo} onChange={ updateData } >
-                            <option selected value="">Soluto</option>
-                            <option selected value="">Kicks</option>
+                          <select class="form-select" aria-label="Default select example" name="id_modelo" value={vehiculo?.id_modelo} onChange={ updateData } >
+                          {
+                            modelos.map(item=>{
+                                return (
+                                    <option key={item.id} value={item.id}> {item.nombre} </option>
+                                )
+                            })
+                        }
                           </select>
                       </div>     
                   </div>
@@ -127,15 +216,35 @@ function Vehiculos() {
                           </select>
 
                       </div>     
-                      <div class="form-check mb-3 d-flex justify-content-end">
-                          <button type="submit" class="btn btn-primary" disabled={ (crud === 'ins' || crud === 'upd' )? false : true } >{ (crud === 'ins' || crud === '')?'Aceptar':'Modificar' }</button>
-                          <button type="reset" class="btn btn-danger" style={{marginLeft:'10px'}} onClick={cancelar}>Cancelar</button>
-                      </div>     
                   </div>
 
               </div>
 
-              </form>
+              <div className="row">
+
+                  <div className="col">
+                      <div class="form-check mb-3">
+                          <label className="form-check-label"><b>Taller</b></label>
+                          <select class="form-select" aria-label="Default select example" name="id_taller" value={vehiculo?.id_taller} onChange={ updateData } >
+                            {
+                                talleres.map(item=>{
+                                    return (
+                                        <option key={item.id} value={item.id}> {item.nombre} </option>
+                                    )
+                                })
+
+                            }
+                          </select>
+                      </div>     
+                      <div class="form-check mb-3 d-flex justify-content-end">
+                            <button type="submit" class="btn btn-primary" disabled={ (crud === 'ins' || crud === 'upd' )? false : true } >{ (crud === 'ins' || crud === '')?'Aceptar':'Modificar' }</button>
+                            <button type="reset" class="btn btn-danger" style={{marginLeft:'10px'}} onClick={init}>Cancelar</button>
+                        </div>     
+
+                  </div>
+
+                </div>  
+            </form>
 
 
           </div>
@@ -153,6 +262,7 @@ function Vehiculos() {
                               <th>Chapa</th>
                               <th>Año</th>
                               <th>Estado</th>
+                              <th>Taller</th>
                               <th className="ml-3">Accion</th>
                               
                           </tr>
@@ -175,8 +285,9 @@ function Vehiculos() {
                                                   : <span class="badge text-bg-danger">{item.estado}</span> 
                                               }
                                           </td>
+                                          <td> {item.taller} </td>
                                           <td> 
-                                              <button className="btn btn-info btn-sm" onClick={()=> alert('Editar Vehiculo ' + item.id )}>Editar</button>
+                                              <button className="btn btn-info btn-sm" onClick={()=> editar(item)}>Editar</button>
                                           </td>
                                       </tr>
                                   )

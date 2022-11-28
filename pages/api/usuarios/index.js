@@ -43,7 +43,7 @@ export default async function  handler(req , res ){
                     usuario.password = bcrypt.hashSync( usuario.password , saltRounds )
     
                     
-                    await conn1.insert(usuario)
+                    await conn1.insert(usuario) 
                       .returning('id')
                       .into('agendarenting_usuarios')
                       .then(async (id)=> {

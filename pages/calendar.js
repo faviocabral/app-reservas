@@ -14,7 +14,7 @@ import Buscador from '../components/Buscador.js' //modal.
 import Cookies from 'js-cookie'
 
 let socket 
-socket = io("http://localhost:8000");
+socket = io("http://192.168.10.80:8000", {withCredentials: true,});
 
 import Swal from 'sweetalert2'
 import withReactContent from 'sweetalert2-react-content'
@@ -185,6 +185,7 @@ const [otroEventos , setOtroEventos ] = useState([])
             chapa: item.chapa, 
             vin: item.vin,
             anho: item.anho, 
+            taller: item.taller, 
             id: item.id
           })
         })
@@ -234,7 +235,7 @@ const [otroEventos , setOtroEventos ] = useState([])
             })
             setBaseDatos(lista)
               // caso qeu alquien este agendando bloquee la pagina... 
-              await fetch(`http://localhost:8000/getOtherAgenda` )
+              await fetch(`http://192.168.10.80:8000/getOtherAgenda` )
               .then(response => response.json()) 
               .then((result) => { 
                            
@@ -291,7 +292,7 @@ const [otroEventos , setOtroEventos ] = useState([])
       e.preventDefault()
 
       let codigo = document.getElementsByName('buscar')[0].value
-      await fetch('http://localhost:3000/api/clientes/'+ codigo)
+      await fetch('http://192.168.10.80:3000/api/clientes/'+ codigo)
       .then(response => response.json()) 
       .then(data => { 
         setListaCliente(data.rows) 
@@ -314,12 +315,13 @@ const [otroEventos , setOtroEventos ] = useState([])
       //controlamos cuando sea fechafin que no se solapen las asignaciones... 
       if(e.target.name === 'fechaf'){
         let res = controlAsignacion()
-        if(res > 0 )
+        if(res > 0 ){
           return 
-        
-        if( moment(fechaFRef.current.value).diff(fechaIRef.current.value , 'days') )
+        }
+        if( moment(fechaFRef.current.value).diff(fechaIRef.current.value , 'days') < 0 ){
           toast.warning('No puede agendar una fecha inferior al inicio !!!')
           return 
+        }
 
         
       }
@@ -493,6 +495,9 @@ const [otroEventos , setOtroEventos ] = useState([])
         setListaCliente([]) //limpiamos el buscador
         toggle() //cerramos el modal de la agendamiento.
         listaAgenda( rangoFecha.fechai , rangoFecha.fechaf )// recuperamos las agenda del mes
+        //mismo evento que al grabar 
+        socket.emit("cancelEvent", {id: socket.id})
+
 
       })
       .catch(err => console.log(err))
@@ -680,6 +685,7 @@ const [otroEventos , setOtroEventos ] = useState([])
                           <th scope="col">NRO CHAPA</th>
                           <th scope="col">AÑO</th>
                           <th scope="col">VIN</th>
+                          <th scope="col">TALLER</th>
                           <th scope="col">#</th>
                         </tr>
                       </thead>
@@ -704,7 +710,8 @@ const [otroEventos , setOtroEventos ] = useState([])
                                   <td>{item.modelo}</td>
                                   <td>{item.chapa}</td>
                                   <td>{item.anho}</td>
-                                  <td>{item.vin}</td>
+                                  <td>{item.vin.slice(-6)}</td>
+                                  <td style={{textOverflow:'ellipsis', maxWidth:'125px', whiteSpace: 'nowrap' , overflow:'hidden'}} >{item.taller}</td>
                                   <td style={{paddingRight: '0px', textAlign:'right'}}>
                                     {
                                       (agenda?.tipoEvento === 'upd')
@@ -812,6 +819,7 @@ const [otroEventos , setOtroEventos ] = useState([])
                             <th scope="col">NRO CHAPA</th>
                             <th scope="col">AÑO</th>
                             <th scope="col">VIN</th>
+                            <th scope="col">TALLER</th>
                             <th scope="col">#</th>
                           </tr>
                         </thead>
@@ -828,7 +836,8 @@ const [otroEventos , setOtroEventos ] = useState([])
                                           <td>{item.modelo}</td>
                                           <td>{item.chapa}</td>
                                           <td>{item.anho}</td>
-                                          <td>{item.vin}</td>
+                                          <td>{item.vin.slice(-6)}</td>
+                                          <td style={{textOverflow:'ellipsis', maxWidth:'125px', whiteSpace: 'nowrap' , overflow:'hidden'}} >{item.taller}</td>
                                           {
                                             (agenda?.tipoEvento === 'upd' )
                                             ? <td></td>

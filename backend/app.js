@@ -6,8 +6,11 @@ app.use(cors())
 const io = require("socket.io")(http, 
   { 
     cors: {
-      origin: "http://localhost:3000",
-      methods: ['GET', 'POST']
+      origin: ["*", "http://192.168.10.80:3000" , "http://localhost:3000" ],
+      methods: ['GET', 'POST'],
+      allowedHeaders: ["Access-Control-Allow-Credentials", 'Access-Control-Allow-Origin'],
+      credentials: true,
+      transports: ['websocket', 'polling'],      
     }
 }  
 ); 
@@ -26,8 +29,15 @@ io.on("connection", (socket) => {
 
     socket.on("disconnect", () => { 
       console.log('alguien se desconecto', socket.id) 
-      //allClients = allClients.filter(item => item.id === socket.id) // filtramos el que se desconecto el socket
-      //console.log(allClients , socket.id , moment().format('YYYY-MM-DD HH:mm:ss') )
+	  if(allClients.findIndex(item => item.id === socket.id && Object.keys(item.agenda).length >0  )>=0 ){
+		  allClients.forEach(item=>{
+			  if(item.id === socket.id ){
+				  item.agenda = {}
+			  }
+		  })
+		  console.log('alguien se desconecto y tiene agenda')
+			socket.broadcast.emit("cancelingEvent",  socket.id )
+	  }
 
     })
 
