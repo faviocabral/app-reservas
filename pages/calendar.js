@@ -14,7 +14,7 @@ import Buscador from '../components/Buscador.js' //modal.
 import Cookies from 'js-cookie'
 
 let socket 
-socket = io("http://localhost:8000", {withCredentials: true,});
+socket = io("http://192.168.10.80:8000", {withCredentials: true,});
 
 import Swal from 'sweetalert2'
 import withReactContent from 'sweetalert2-react-content'
@@ -235,7 +235,7 @@ const [otroEventos , setOtroEventos ] = useState([])
             })
             setBaseDatos(lista)
               // caso qeu alquien este agendando bloquee la pagina... 
-              await fetch(`http://localhost:8000/getOtherAgenda` )
+              await fetch(`http://192.168.10.80:8000/getOtherAgenda` )
               .then(response => response.json()) 
               .then((result) => { 
                            
@@ -292,7 +292,7 @@ const [otroEventos , setOtroEventos ] = useState([])
       e.preventDefault()
 
       let codigo = document.getElementsByName('buscar')[0].value
-      await fetch('http://localhost:3000/api/clientes/'+ codigo)
+      await fetch('http://192.168.10.80:3000/api/clientes/'+ codigo)
       .then(response => response.json()) 
       .then(data => { 
         setListaCliente(data.rows) 
