@@ -14,7 +14,7 @@ import Buscador from '../components/Buscador.js' //modal.
 import Cookies from 'js-cookie'
 
 let socket 
-socket = io("http://192.168.10.80:8000", {withCredentials: true,});
+socket = io("http://localhost:8000", {withCredentials: true,});
 
 import Swal from 'sweetalert2'
 import withReactContent from 'sweetalert2-react-content'
@@ -235,7 +235,7 @@ const [otroEventos , setOtroEventos ] = useState([])
             })
             setBaseDatos(lista)
               // caso qeu alquien este agendando bloquee la pagina... 
-              await fetch(`http://192.168.10.80:8000/getOtherAgenda` )
+              await fetch(`http://localhost:8000/getOtherAgenda` )
               .then(response => response.json()) 
               .then((result) => { 
                            
@@ -292,7 +292,7 @@ const [otroEventos , setOtroEventos ] = useState([])
       e.preventDefault()
 
       let codigo = document.getElementsByName('buscar')[0].value
-      await fetch('http://192.168.10.80:3000/api/clientes/'+ codigo)
+      await fetch('http://localhost:3000/api/clientes/'+ codigo)
       .then(response => response.json()) 
       .then(data => { 
         setListaCliente(data.rows) 
@@ -384,10 +384,10 @@ const [otroEventos , setOtroEventos ] = useState([])
 
       //para controlar habilitaciones de botones tanto para callcenter y asesores y supervisores
       let control = JSON.parse(Cookies.get('userRenting')) 
-      if( ('asesor administrador supervisor').includes( control.tipo.toLowerCase() ) )
+      if( ('asesor').includes( control.tipo.toLowerCase() ) )
         setAuthAsesor(false)
 
-      if( ('call center administrador supervisor').includes( control.tipo.toLowerCase() ) && data.user_ins !== user.user )
+      if( ('call center').includes( control.tipo.toLowerCase() ) && data.user_ins !== user.user )
         setAuthCall(false)
 
       setAgenda({dateStr: info.event.startStr, tipoEvento: 'upd' , title: info.event.title })
@@ -546,6 +546,8 @@ const [otroEventos , setOtroEventos ] = useState([])
               setListaCliente([]) //limpiamos el buscador
               toggle() //cerramos el modal de la agendamiento.
               listaAgenda( rangoFecha.fechai , rangoFecha.fechaf )// recuperamos las agenda del mes
+              //mismo evento que al grabar 
+              socket.emit("cancelEvent", {id: socket.id})              
     
             })
             .catch(err => console.log(err))
@@ -586,6 +588,8 @@ const [otroEventos , setOtroEventos ] = useState([])
             setListaCliente([]) //limpiamos el buscador
             toggle() //cerramos el modal de la agendamiento.
             listaAgenda( rangoFecha.fechai , rangoFecha.fechaf )// recuperamos las agenda del mes
+            //mismo evento que al grabar 
+            socket.emit("cancelEvent", {id: socket.id})            
   
           })
           .catch(err => console.log(err))
@@ -627,6 +631,8 @@ const [otroEventos , setOtroEventos ] = useState([])
           setListaCliente([]) //limpiamos el buscador
           toggle() //cerramos el modal de la agendamiento.
           listaAgenda( rangoFecha.fechai , rangoFecha.fechaf )// recuperamos las agenda del mes
+          //mismo evento que al grabar 
+          socket.emit("cancelEvent", {id: socket.id})            
 
         })
         .catch(err => console.log(err))
@@ -719,11 +725,12 @@ const [otroEventos , setOtroEventos ] = useState([])
                                         ?<span><i className="bi bi-check-lg" style={{fontSize:'24px', position:'relative', left:'-10px'}} ></i></span>
                                         : <span></span>
                                       :(agenda.tipoEvento === 'ins')
-                                        ?(listaAsignados.findIndex(item3 => item3.vin === item.vin ) >= 0 )
-                                          ?<span><i className="bi bi-check-lg" style={{fontSize:'24px', position:'relative', left:'-10px'}} ></i></span>
-                                          :<i className="bi bi-arrow-right btn btn-warning font-weight-bold px-2 py-0 " style={{fontSize:'20px'}} onClick={()=> asignarVehiculo(item.vin) }></i> 
-                                        :<span></span>
-                                              
+                                        ?(asignados.findIndex(item2 => item2.vin === item.vin ) >= 0 )
+                                          ? <span></span>
+                                          :(listaAsignados.findIndex(item3 => item3.vin === item.vin ) >= 0 )
+                                            ?<span><i className="bi bi-check-lg" style={{fontSize:'24px', position:'relative', left:'-10px'}} ></i></span>
+                                            :<i className="bi bi-arrow-right btn btn-warning font-weight-bold px-2 py-0 " style={{fontSize:'20px'}} onClick={()=> asignarVehiculo(item.vin) }></i> 
+                                        : <span></span>      
                                       }
                                   </td>
                                 </tr>
@@ -906,10 +913,35 @@ const [otroEventos , setOtroEventos ] = useState([])
                 (agenda.tipoEvento === 'upd') 
                 ? 
                     <> 
-                    <Button color="info"  disabled={authAsesor || data.id_estado === 2 || data.id_estado > 2 || (data.user_ins !== user.user && 'administrador supervisor'.includes(user.user.toLocaleLowerCase()) ) } onClick={entregarVehiculo}> Entregado </Button> 
-                    <Button color="success"  disabled={authAsesor || data.id_estado !== 2 || (data.user_ins !== user.user && 'administrador supervisor'.includes(user.user.toLocaleLowerCase()) ) } style={{marginRight:'25px'}} onClick={recibirVehiculo}> Recibido </Button> 
-                    {/* <Button color="secondary" disabled={authCall}> Re-Agendar </Button> */}
-                    <Button color="warning"  disabled={authCall || ('2 3').includes(data.id_estado) || (data.user_ins !== user.user && 'administrador supervisor'.includes(user.user.toLocaleLowerCase()) ) } style={{marginRight:'25px'}} onClick={cancelarAgenda}> Cancelar Agenda</Button>
+                    <Button color="info"  disabled={
+                                                      (data.id_estado >= 2  ) // si ya entrego bloquear
+                                                      ? true
+                                                      : ( 'administrador supervisor'.includes(user.tipo.toLocaleLowerCase()) 
+                                                          || ('asesor'.includes(user.tipo.toLocaleLowerCase()) && data.user_ins === user.user ) 
+                                                        )
+                                                         ? false
+                                                         : true 
+                                                  } onClick={entregarVehiculo}> Entregado </Button> 
+                    <Button color="success"  disabled={
+                                                      (data.id_estado !== 2  ) // solo si fue entregado puede recibir 
+                                                      ? true
+                                                      : ( 'administrador supervisor'.includes(user.tipo.toLocaleLowerCase()) 
+                                                          || ('asesor'.includes(user.tipo.toLocaleLowerCase()) && data.user_ins === user.user ) 
+                                                        )
+                                                         ? false
+                                                         : true 
+                      
+                                                      } style={{marginRight:'25px'}} onClick={recibirVehiculo}> Recibido </Button> 
+                    <Button color="warning"  disabled={
+                                                        
+                                                        ( ('2 3').includes(data.id_estado) ) // si ya fue entregado ya no puede cancelar
+                                                        ? true
+                                                        :( 'administrador supervisor'.includes(user.tipo.toLocaleLowerCase()) 
+                                                            || ('call center'.includes(user.tipo.toLocaleLowerCase()) && data.user_ins === user.user ) 
+                                                         )
+                                                          ? false
+                                                          : true 
+                                                      } style={{marginRight:'25px'}} onClick={cancelarAgenda}> Cancelar Agenda</Button>
                     </>
                 : <span></span>
                }             
