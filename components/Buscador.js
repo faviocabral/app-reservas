@@ -2,7 +2,7 @@ import React from 'react'
 import { Button, Modal, ModalHeader, ModalBody, ModalFooter } from 'reactstrap'
 
 const Buscador = React.memo(({children , open , setOpen , titulo= 'Buscador' })=> {
-    const toggle = () => setOpen(!open) ;
+    const toggle = () => setOpen(!open);
     const customStyles = {
       overlay: {zIndex: 1000}
     };

@@ -2,6 +2,9 @@ import React, {useState , useEffect , useRef}  from 'react'
 import Layout from '../components/Layout'
 import { toast } from 'react-toastify'
 import Swal from 'sweetalert2'
+import DataTable from 'react-data-table-component';
+import DataTableExtensions from "react-data-table-component-extensions";
+import "react-data-table-component-extensions/dist/index.css";
 
 function Vehiculos() {
 

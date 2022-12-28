@@ -30,20 +30,38 @@ export default async function  handler(req , res ){
         case 'POST': 
             try { 
                 const agenda = req.body 
+                //para registrar los eventos 
+                let etapa = {
+                    nombre : agenda.cab.estado,
+                    id_estado : agenda.cab.id_estado,
+                    id_estado : agenda.cab.id_estado,
+                    user:  agenda.cab.user_ins,
+                    fecha: agenda.cab.fecha , 
+                    user_ins: agenda.cab.user_ins 
+                }
                 await conn1.insert(agenda.cab) 
                   .returning('id') 
-                  .into('agendarenting_agenda')  
+                  .into('agendarenting_agenda') 
                   .then(async (idAgenda)=> { 
                     
                     //insertar detalle vehiculos 
-                    let detalles = await agenda.det.map(item => { return( {...item, id_cab: idAgenda[0].id } ) } )
+                    let detalles = await agenda.det.map(item => { return( {...item, id_cab: idAgenda[0].id } ) } ) 
                     await conn1.insert(detalles) 
                       .into('agendarenting_detalles') 
-                      .then((id2)=> { 
-                        // use id here 
-                        return res.status(200).json({message:' datos insertados correctamente !!!', detalle: id2}) 
+                      .then(async (id2)=> { 
+
+                        //insertar el evento 
+                        etapa.id_agenda = idAgenda[0].id
+                        await conn1.insert(etapa) 
+                        .into('agendarenting_etapas') 
+                        .then((id3)=> { 
+                            return res.status(200).json({message:' datos insertados correctamente !!!', detalle: id2}) 
+
+                        })
+                        .catch((err)=>{ return res.status(400).json({message:' hubo un problema en la etapa !!!', error : err , datos: etapa }) })
+  
                       })
-                      .catch((err)=>{ return res.status(200).json({message:' hubo un problema en el det !!!', error : err}) })
+                      .catch((err)=>{ return res.status(400).json({message:' hubo un problema en el det !!!', error : err}) })
 
                   }) 
                   .catch((err)=>{ return res.status(400).json({message:' hubo un problema en el cab !!!', error : err}) }) 
@@ -67,15 +85,33 @@ export default async function  handler(req , res ){
                     agenda.id_estado = 3 //estado recibido el vehiculo 
                 }
 
+                let nombreEtapa = {cancelar:'Cancelado' , entregar:'Entregado' , recibir:'Recibido'} 
+                const etapa = { 
+                    nombre : nombreEtapa[agenda.tipoEvento], 
+                    id_estado : agenda.id_estado, 
+                    id_agenda : req.query.id,
+                    user:  agenda.user_upd, 
+                    fecha: agenda.fecha_upd, 
+                    user_ins: agenda.user_upd 
+                } 
+
                 delete agenda.tipoEvento // no es parte de la tabla 
                 
                 await conn1('agendarenting_agenda')
-                    .update(agenda)
-                    .where('id', '=' , req.query.id)
-                    .then(async (id)=> {
-                    return res.status(200).json({message:' datos modificados correctamente !!!', nro: req.query.id , agenda: agenda })
+                .update(agenda)
+                .where('id', '=' , req.query.id)
+                .then(async (id)=> {
+                    //insertar el evento 
+                    await conn1.insert(etapa) 
+                    .into('agendarenting_etapas') 
+                    .then((id3)=> { 
+                        
+                        return res.status(200).json({message:' datos modificados correctamente !!!', nro: req.query.id , agenda: agenda })
                     })
-                    .catch((err)=>{ return res.status(400).json({message:' hubo un problemaaaa !!!', error : err}) })      
+                    .catch((err)=>{ return res.status(400).json({message:' hubo un problemaaaa en etapa!!!', error : err , dato: etapa }) })                    
+                    
+                })
+                .catch((err)=>{ return res.status(400).json({message:' hubo un problemaaaa al actualizar agenda !!!', error : err}) })      
                 
             } catch (error) {
                 return res.status(500).json({message:' hubo un error con el metodo post !!!' , error: error })                

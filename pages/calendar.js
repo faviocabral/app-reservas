@@ -57,6 +57,7 @@ const [otroEventos , setOtroEventos ] = useState([])
   const buscarRef = useRef()
   const codigoCliRef = useRef()
   const nombreCliRef = useRef()
+  const tallerRef = useRef()
   const [listaCliente, setListaCliente] = useState([]) // para abrir la ventana de
   const dataInterface = {fechai:'' , fechaf:'', codigoCliente:'', nombreCliente:'' , taller: 0 }
   const [data, setData] = useState(dataInterface)
@@ -93,7 +94,7 @@ const [otroEventos , setOtroEventos ] = useState([])
     //cuando estan agendando desde otro lugar 
     socket.on('addingEvent', async(event )=>{ 
 
-     toast(` ${event.agenda.title} esta registrando en la fecha ${event.agenda.fecha} `)
+     //toast(` ${event.agenda.title} esta registrando en la fecha ${event.agenda.fecha} `)
      //refresh() 
      let fechai = localStorage.getItem('fechai') 
      let fechaf =  localStorage.getItem('fechaf') 
@@ -183,11 +184,12 @@ const [otroEventos , setOtroEventos ] = useState([])
             marca: item.marca, 
             modelo: item.modelo, 
             chapa: item.chapa, 
-            vin: item.vin,
+            vin: item.vin, 
             anho: item.anho, 
             taller: item.taller, 
-            id: item.id
-          })
+            id: item.id, 
+            id_taller: item.id_taller 
+          }) 
         })
         setVehiculos(lista)
        
@@ -220,7 +222,7 @@ const [otroEventos , setOtroEventos ] = useState([])
         await fetch('api/vehiculos') 
           .then(response => response.json()) 
           .then( async( vhe ) => { 
-            let lista = json.agenda.map(item => {  
+            let lista = json.agenda.map(item => { 
               return({...item,
                 date: item.fecha,
                 start: item.fechai,
@@ -240,9 +242,10 @@ const [otroEventos , setOtroEventos ] = useState([])
               .then((result) => { 
                            
                 if( result.allClients.findIndex(item=> item.user.user !== myUser.user && Object.keys(item.agenda).length > 0 ) >= 0 ){ // si existen otras agenda traer los datos 
-                  
+                  console.log(result.allClients.filter(item => item.user.user !== myUser.user ))
                   result.allClients
-                  .filter(item => item.user.user !== myUser.user  )
+                  .filter(item => Object.keys(item.agenda).length > 0 ) // solo agenda activas de otros 
+                  .filter(item => item.user.user !== myUser.user ) // solo de otros usuarios
                   .forEach(item=> lista.push(item.agenda) )
                   setEvento(lista)
                 }else{
@@ -315,28 +318,28 @@ const [otroEventos , setOtroEventos ] = useState([])
       //controlamos cuando sea fechafin que no se solapen las asignaciones... 
       if(e.target.name === 'fechaf'){
         let res = controlAsignacion()
+
         if(res > 0 ){
           return 
         }
+
         if( moment(fechaFRef.current.value).diff(fechaIRef.current.value , 'days') < 0 ){
           toast.warning('No puede agendar una fecha inferior al inicio !!!')
           return 
         }
-
-        
       }
 
       setData({
           ...data,
           [e.target.name]: e.target.value
       })
-
     }
 
     ///////////////////////////////////////////////////////////////////////////
     /// NUEVO EVENTO 
     /////////////////////////////////////////////////////////////////////////// 
     const handleDateClick = (arg) => { 
+      console.log(arg)
       if( evento.findIndex(item => item.fecha === arg.dateStr && item.title.includes('el usuario') ) >= 0 ){
         toast.warning('Hay un usuario registrando en esta fecha !!! ')
         return 
@@ -353,8 +356,8 @@ const [otroEventos , setOtroEventos ] = useState([])
       asignadosxFecha(arg.dateStr) 
       setAsignados([]) 
 
-      dataInterface.fechai = arg.dateStr 
-      dataInterface.fechaf = arg.dateStr 
+      dataInterface.fechai = moment(arg.dateStr).format('YYYY-MM-DD ') + moment().format('00:00')
+      dataInterface.fechaf = moment(arg.dateStr).format('YYYY-MM-DD ') + moment().format('00:00')
       setData(dataInterface) 
 
       let myUser = JSON.parse(Cookies.get('userRenting'))
@@ -364,8 +367,7 @@ const [otroEventos , setOtroEventos ] = useState([])
       ///////////////////////////////////////////////
       //ABRIR EL MODAL PARA REGISTRAR LOS DATOS
       setAgenda({dateStr: arg.dateStr , tipoEvento: 'ins'}) //tomar los datos de la agenda
-        toggle() // abrir modal 
-
+      toggle() // abrir modal 
     }
 
     ////////////////////////////////////////////////////////////////////
@@ -393,8 +395,8 @@ const [otroEventos , setOtroEventos ] = useState([])
       setAgenda({dateStr: info.event.startStr, tipoEvento: 'upd' , title: info.event.title })
       let myEvent = {
         fecha: moment(info.event.extendedProps.fecha).utc().format('YYYY-MM-DD'), 
-        fechai: moment(info.event.extendedProps.fechai).utc().format('YYYY-MM-DD'), 
-        fechaf: moment(info.event.extendedProps.fechaf).utc().format('YYYY-MM-DD'), 
+        fechai: moment(info.event.extendedProps.fechai).utc().format('YYYY-MM-DD HH:mm'), 
+        fechaf: moment(info.event.extendedProps.fechaf).utc().format('YYYY-MM-DD HH:mm'), 
         codigoCliente: info.event.extendedProps.codigo_cliente, 
         nombreCliente: info.event.extendedProps.nombre_cliente, 
         taller: info.event.extendedProps.id_taller, 
@@ -572,7 +574,6 @@ const [otroEventos , setOtroEventos ] = useState([])
 
           Swal.showLoading()
           let usuario = await JSON.parse(Cookies.get('userRenting'))
-  
           let datos = { tipoEvento: 'entregar' , user_upd: usuario.user , fecha_upd: moment().format('YYYY-MM-DD HH:mm:ss') }
           await fetch('api/calendar?id=' + data.id , {
             method: "PUT",
@@ -581,7 +582,8 @@ const [otroEventos , setOtroEventos ] = useState([])
           })
           .then(response => response.json()) 
           .then(json => { 
-            toast.success('Agenda Cancelada !!! ') 
+            alert(JSON.stringify(json))
+            toast.success('Vehiculo Entregado !!! ') 
             Swal.close()
             setAsignados([]) // limpiamos lista de vehiculos 
             setData(dataInterface) //limpiamos los datos de la agenda
@@ -589,7 +591,7 @@ const [otroEventos , setOtroEventos ] = useState([])
             toggle() //cerramos el modal de la agendamiento.
             listaAgenda( rangoFecha.fechai , rangoFecha.fechaf )// recuperamos las agenda del mes
             //mismo evento que al grabar 
-            socket.emit("cancelEvent", {id: socket.id})            
+            socket.emit("cancelEvent", {id: socket.id}) 
   
           })
           .catch(err => console.log(err))
@@ -613,24 +615,23 @@ const [otroEventos , setOtroEventos ] = useState([])
     }).then(async (result)=>{
       if(result.isConfirmed){
 
-        Swal.showLoading()
-        let usuario = await JSON.parse(Cookies.get('userRenting'))
-
-        let datos = { tipoEvento: 'recibir' , user_upd: usuario.user , fecha_upd: moment().format('YYYY-MM-DD HH:mm:ss') }
-        await fetch('api/calendar?id=' + data.id , {
-          method: "PUT",
-          body: JSON.stringify(datos ),
-          headers: {"Content-type": "application/json; charset=UTF-8"}
-        })
+        Swal.showLoading() 
+        let usuario = await JSON.parse(Cookies.get('userRenting')) 
+        let datos = { tipoEvento: 'recibir' , user_upd: usuario.user , fecha_upd: moment().format('YYYY-MM-DD HH:mm:ss') } 
+        await fetch('api/calendar?id=' + data.id , { 
+          method: "PUT", 
+          body: JSON.stringify(datos ), 
+          headers: {"Content-type": "application/json; charset=UTF-8"} 
+        }) 
         .then(response => response.json()) 
         .then(json => { 
-          toast.success('Agenda Cancelada !!! ') 
-          Swal.close()
+          toast.success('Vehiculo Recibido !!! ') 
+          Swal.close() 
           setAsignados([]) // limpiamos lista de vehiculos 
           setData(dataInterface) //limpiamos los datos de la agenda
           setListaCliente([]) //limpiamos el buscador
           toggle() //cerramos el modal de la agendamiento.
-          listaAgenda( rangoFecha.fechai , rangoFecha.fechaf )// recuperamos las agenda del mes
+          listaAgenda( rangoFecha.fechai , rangoFecha.fechaf ) // recuperamos las agenda del mes
           //mismo evento que al grabar 
           socket.emit("cancelEvent", {id: socket.id})            
 
@@ -638,9 +639,8 @@ const [otroEventos , setOtroEventos ] = useState([])
         .catch(err => console.log(err))
       }
     })
-    
+   
 }
-
 
     const addDias = ( dias )=>{
 
@@ -649,8 +649,62 @@ const [otroEventos , setOtroEventos ] = useState([])
       if(res > 0 ) 
         return 
 
-      setData({...data, ['fechaf']:fechaFRef.current.value = moment(agenda?.dateStr).add(dias, 'd').utc().format('YYYY-MM-DD')})
+      setData({...data, ['fechaf']:fechaFRef.current.value = moment(agenda?.dateStr).add(dias, 'd').utc().format('YYYY-MM-DD 00:00')})
     }
+
+    const checkEtapa = async (id)=> {
+
+      await fetch('api/etapas/' + id )
+      .then(response => response.json()) 
+      .then(json => {
+        
+        const color = {
+                        Agendado: 'badge bg-primary',
+                        Entregado: 'bg-info',
+                        Recibido: 'bg-success',
+                      }
+        const res =  json.rows.map((item , index) =>{
+          return (
+            `<tr>
+              <td>${index +1 }</td>
+              <td><span class="badge ${color[item.nombre]}">${item.nombre.toUpperCase()}</span></td>
+              <td>${item.user}</td>
+              <td>${moment(item.fecha).format('YYYY-MM-DD hh:mm')}</td>
+            </tr>
+            `
+          )
+        })
+        const listado = 
+            `
+              <table class="table table-sm">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Etapa</th>
+                    <th>Usuario</th>
+                    <th>Fecha</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${ res.join(' ') }
+                </tbody>
+              </table>
+            `
+  
+        Swal.fire({
+          title: 'Etapa de la Agenda',
+          icon: 'info',
+          html: listado,
+          showCloseButton: true,
+          showCancelButton: true,
+        })
+      })
+
+
+
+
+    }
+
 
     const toggle = () => setModal2(!modal2)
     const Modal1 = ()=>{
@@ -684,21 +738,25 @@ const [otroEventos , setOtroEventos ] = useState([])
                     </div>
                     <table className="table table-sm mt-3" style={{fontSize: 14}}>
                       <thead>
-                        <tr style={{textAlign:'center'}}>
+                        <tr >
                           <th scope="col">#</th>
+                          <th scope="col">TALLER</th>
                           <th scope="col">MARCA</th>
                           <th scope="col">MODELO</th>
                           <th scope="col">NRO CHAPA</th>
                           <th scope="col">AÑO</th>
                           <th scope="col">VIN</th>
-                          <th scope="col">TALLER</th>
-                          <th scope="col">#</th>
+                          <th scope="col" className="text-center">#</th>
                         </tr>
                       </thead>
                       <tbody>
                         {
-                          vehiculos.map((item, index )=>{
-                            return (
+                          (vehiculos.filter(item=> item.id_taller === Number(data.taller) ).length === 0 )
+                          ? <tr> <td colSpan="8" className="text-center">Seleccione un Taller en la lista seleccionable !</td> </tr>
+                          : vehiculos
+                            .filter(item=> item.id_taller === Number(data.taller) )
+                            .map((item, index )=>{
+                              return (
                                 <tr className={ `align-middle ${
                                   (agenda?.tipoEvento === 'upd')
                                   ?(asignados.findIndex(item2 => item2.vin === item.vin ) >= 0 )
@@ -711,13 +769,13 @@ const [otroEventos , setOtroEventos ] = useState([])
                                       : ''
                                   }` } key={item.vin} >
                                 
-                                  <th>{index + 1}</th>
-                                  <td>{item.marca}</td>
-                                  <td>{item.modelo}</td>
-                                  <td>{item.chapa}</td>
-                                  <td>{item.anho}</td>
-                                  <td>{item.vin.slice(-6)}</td>
+                                  <th>{index + 1}   </th>
                                   <td style={{textOverflow:'ellipsis', maxWidth:'125px', whiteSpace: 'nowrap' , overflow:'hidden'}} >{item.taller}</td>
+                                  <td>{item.marca}  </td>
+                                  <td>{item.modelo} </td>
+                                  <td>{item.chapa}  </td>
+                                  <td>{item.anho}   </td>
+                                  <td>{item.vin.slice(-6)}</td>
                                   <td style={{paddingRight: '0px', textAlign:'right'}}>
                                     {
                                       (agenda?.tipoEvento === 'upd')
@@ -734,8 +792,8 @@ const [otroEventos , setOtroEventos ] = useState([])
                                       }
                                   </td>
                                 </tr>
-                            )
-                          })
+                              )
+                            })
                         }
                       </tbody>
                     </table>
@@ -744,9 +802,9 @@ const [otroEventos , setOtroEventos ] = useState([])
                   <div className="col-6">
                     <h3>Datos de la Agenda</h3>
                     <Stepper activeStep={ (agenda.tipoEvento === 'upd')? (data.id_estado -1) : -1 } style={{padding:'0px'}}>
-                      <Step label="Agendado" />
-                      <Step label="Entregado" />
-                      <Step label="Recibido" />
+                      <Step label="Agendado" onClick={()=> checkEtapa(data.id) }  />
+                      <Step label="Entregado" onClick={()=> checkEtapa(data.id)  } />
+                      <Step label="Recibido" onClick={()=> checkEtapa(data.id)  }  />
                     </Stepper> 
 
                     <form onSubmit={e => e.preventDefault} className="">
@@ -755,14 +813,14 @@ const [otroEventos , setOtroEventos ] = useState([])
                         <div className='col-4'>
                           <div className="mb-3">
                             <label htmlFor="uname" className="form-label text-center w-100"><b>Fecha inicio:</b></label>
-                            <input type="date" className="form-control text-center" id="uname" placeholder="Enter username" name="fechai" required value={(data.fechai.length > 0)?data.fechai:agenda.dateStr} ref={fechaIRef} onChange={updateData} readOnly={true }  />
+                            <input type="datetime-local" className="form-control text-center" id="uname" placeholder="Enter username" name="fechai" required value={(data.fechai.length > 0)?data.fechai:agenda.dateStr} ref={fechaIRef} onChange={updateData} />
                           </div>
                         </div>
 
                         <div className='col-4'>
                           <div className="mb-3">
                             <label htmlFor="pwd" className="form-label text-center w-100"><b>Fecha Fin:</b></label>
-                            <input type="date" className="form-control text-center" id="pwd" placeholder="Enter password" name="fechaf" required value={(data.fechaf.length > 0)?data.fechaf:agenda.dateStr} ref={fechaFRef} onChange={updateData } readOnly={(agenda?.tipoEvento === 'upd')?true:false } />
+                            <input type="datetime-local" className="form-control text-center" id="pwd" placeholder="Enter password" name="fechaf" required value={(data.fechaf.length > 0)?data.fechaf:agenda.dateStr} ref={fechaFRef} onChange={updateData } readOnly={(agenda?.tipoEvento === 'upd')?true:false } />
                           </div>
                         </div>
 
@@ -798,8 +856,8 @@ const [otroEventos , setOtroEventos ] = useState([])
 
                           <div className="input-group mt-3 mb-3"> 
                           <span className="input-group-text"><b>Taller</b> &nbsp;&nbsp;&nbsp;</span>
-                          <select className="form-select" aria-label="Default select example" name="taller" onChange={ updateData }  value={data?.taller} disabled={(agenda?.tipoEvento === 'upd')?true:false }>
-                            <option selected>Taller ?</option>
+                          <select className="form-select" aria-label="Default select example" name="taller" ref={tallerRef} onChange={ updateData }  value={data?.taller } disabled={(agenda?.tipoEvento === 'upd')?true:false }>
+                            <option selected value="0">Taller ?</option>
                             { 
                               taller?.map(item =>{
                                 return (
@@ -865,7 +923,7 @@ const [otroEventos , setOtroEventos ] = useState([])
               </div>
 
 
-
+              
 
               <Buscador open={abrirBuscador} setOpen={setAbrirBuscador} titulo ={titulo}  >
                 <div className="container">
@@ -917,7 +975,7 @@ const [otroEventos , setOtroEventos ] = useState([])
                                                       (data.id_estado >= 2  ) // si ya entrego bloquear
                                                       ? true
                                                       : ( 'administrador supervisor'.includes(user.tipo.toLocaleLowerCase()) 
-                                                          || ('asesor'.includes(user.tipo.toLocaleLowerCase()) && data.user_ins === user.user ) 
+                                                          || ('asesor'.includes(user.tipo.toLocaleLowerCase()) ) 
                                                         )
                                                          ? false
                                                          : true 
@@ -926,7 +984,7 @@ const [otroEventos , setOtroEventos ] = useState([])
                                                       (data.id_estado !== 2  ) // solo si fue entregado puede recibir 
                                                       ? true
                                                       : ( 'administrador supervisor'.includes(user.tipo.toLocaleLowerCase()) 
-                                                          || ('asesor'.includes(user.tipo.toLocaleLowerCase()) && data.user_ins === user.user ) 
+                                                          || ('asesor'.includes(user.tipo.toLocaleLowerCase()) ) 
                                                         )
                                                          ? false
                                                          : true 
@@ -937,8 +995,8 @@ const [otroEventos , setOtroEventos ] = useState([])
                                                         ( ('2 3').includes(data.id_estado) ) // si ya fue entregado ya no puede cancelar
                                                         ? true
                                                         :( 'administrador supervisor'.includes(user.tipo.toLocaleLowerCase()) 
-                                                            || ('call center'.includes(user.tipo.toLocaleLowerCase()) && data.user_ins === user.user ) 
-                                                         )
+                                                          || ('call center asesor'.includes(user.tipo.toLocaleLowerCase()) && data.user_ins === user.user ) 
+                                                        )
                                                           ? false
                                                           : true 
                                                       } style={{marginRight:'25px'}} onClick={cancelarAgenda}> Cancelar Agenda</Button>
@@ -962,7 +1020,10 @@ const [otroEventos , setOtroEventos ] = useState([])
       let fechaiForm = fechaIRef.current.value 
       let existe = 0 
       let msgError= `Ya existe una asignacion en esta fecha ${fechafForm} !!! ` 
-      let res = evento.map(item =>{ 
+      console.log(evento)
+
+      let res = evento?.filter(e => Object.keys(e).length > 0 )
+            .map(item =>{ 
               return({ 
                   fechai:item.fechai, 
                   diff: (fechaiForm < item.fechai )? moment(fechafForm).diff(item.fechai , 'days') :  -1, //compara lista de eventos contra la fecha inicio del formulario 
@@ -979,8 +1040,9 @@ const [otroEventos , setOtroEventos ] = useState([])
       //controla que no se solapen desde rangos de fecha 
       //alert(JSON.stringify(asignados))
       let lista = [] 
+      
       asignados?.forEach(item3=>{
-        lista = evento
+        lista = evento?.filter(e => Object.keys(e).length > 0 )
         .map(item =>{ 
           return({ 
               fechai:item.fechai, 
@@ -990,11 +1052,11 @@ const [otroEventos , setOtroEventos ] = useState([])
         })
         .filter(item => item.diff >= 0 && item.vins.findIndex(item => item !== item3.vin)  ) 
 
-          //alert(JSON.stringify(lista))
-          if(lista.length > 0 ){
-            toast.warning(msgError,{ timeout: 5000})
-            existe = lista.length
-          }
+        //alert(JSON.stringify(lista))
+        if(lista.length > 0 ){
+          toast.warning(msgError,{ timeout: 5000})
+          existe = lista.length
+        }
 
       })
 

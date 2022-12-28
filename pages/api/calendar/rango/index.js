@@ -11,8 +11,8 @@ export default async function  handler(req , res ){
                 
                 await conn1.select()
                 .from('v_agendarenting_agendas')
-                .where('fechai', '>=', fechai)
-                .andWhere('fechaf', '<=', fechaf)
+                .where('fechai', '>=', moment(fechai).add(-3, 'M').utc().format('YYYY-MM-DD')) 
+                //.andWhere('fechaf', '<=', fechaf)
                 .then(async (rows)=>{
                     await conn1.select()
                     .from('v_agendarenting_detalles')

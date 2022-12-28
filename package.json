@@ -28,13 +28,18 @@
     "mysql": "^2.18.1",
     "next": "12.3.1",
     "next-transpile-modules": "^9.1.0",
-    "react": "18.2.0",
-    "react-dom": "18.2.0",
+    "plotly.js": "^2.16.5",
+    "react": "^18.2.0",
+    "react-data-table-component": "^7.5.2",
+    "react-dom": "^18.2.0",
     "react-form-stepper": "^2.0.3",
+    "react-pivottable": "^0.11.0",
+    "react-plotly.js": "^2.6.0",
     "react-toastify": "^9.0.8",
     "reactstrap": "^9.1.4",
     "socket.io": "^4.5.2",
     "socket.io-client": "^4.5.2",
+    "styled-components": "^5.3.6",
     "sweetalert2": "^11.5.2",
     "sweetalert2-react-content": "^5.0.3",
     "tedious": "^15.1.0",
@@ -43,6 +48,7 @@
   "devDependencies": {
     "@types/react": "^18.0.24",
     "eslint": "8.25.0",
-    "eslint-config-next": "12.3.1"
+    "eslint-config-next": "12.3.1",
+    "react-data-table-component-extensions": "^1.5.2"
   }
 }

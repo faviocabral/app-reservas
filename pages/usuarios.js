@@ -5,6 +5,9 @@ import { toast } from 'react-toastify'
 import { useFormik  } from 'formik';
 import Cookies from 'js-cookie'
 import {useRouter} from 'next/router'
+import DataTable from 'react-data-table-component';
+import DataTableExtensions from "react-data-table-component-extensions";
+import "react-data-table-component-extensions/dist/index.css";
 
 export default function Usuarios() {
     
