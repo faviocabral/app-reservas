@@ -65,6 +65,7 @@ const [otroEventos , setOtroEventos ] = useState([])
   const [taller , setTaller]  = useState([])
   //buscador 
   const [abrirBuscador, setAbrirBuscador] = useState('')
+  const [abrirBuscador2, setAbrirBuscador2] = useState('')
   const [titulo , setTitulo ] = useState('')
   const [vehiculos, setVehiculos] = useState([])
 
@@ -291,6 +292,11 @@ const [otroEventos , setOtroEventos ] = useState([])
       }, 200);
     }
 
+    const actualizarFechaRecepcion = async(e)=>{ 
+      setAbrirBuscador2('show')
+      setTitulo('Actualizar Fecha Recepcion')
+    }
+
     const recuperarCliente = async (e)=>{
       e.preventDefault()
 
@@ -326,6 +332,11 @@ const [otroEventos , setOtroEventos ] = useState([])
         if( moment(fechaFRef.current.value).diff(fechaIRef.current.value , 'days') < 0 ){
           toast.warning('No puede agendar una fecha inferior al inicio !!!')
           return 
+        }
+        if( data?.id_estado === 2 && moment(moment().format('YYYY-MM-DD')).diff(fechaFRef.current.value , 'days') < 0 ){
+          toast.warning('No puede agendar una fecha posterior al del dia para la recepcion de vehiculos !!!')
+          return 
+
         }
       }
 
@@ -604,7 +615,7 @@ const [otroEventos , setOtroEventos ] = useState([])
   const recibirVehiculo = async()=>{
       
     Swal.fire({
-      title: 'Esta seguro de Recibir el vehiculo?',
+      title: 'Esta seguro de Recibir el vehiculo  -  Verifique la fecha fin si esta correcto?',
       //text: "Desea cancelar esta agenda?",
       icon: 'warning',
       showCancelButton: true,
@@ -813,14 +824,14 @@ const [otroEventos , setOtroEventos ] = useState([])
                         <div className='col-4'>
                           <div className="mb-3">
                             <label htmlFor="uname" className="form-label text-center w-100"><b>Fecha inicio:</b></label>
-                            <input type="datetime-local" className="form-control text-center" id="uname" placeholder="Enter username" name="fechai" required value={(data.fechai.length > 0)?data.fechai:agenda.dateStr} ref={fechaIRef} onChange={updateData} />
+                            <input type="datetime-local" className="form-control text-center" id="uname" placeholder="Enter username" name="fechai" required value={(data.fechai.length > 0)?data.fechai:agenda.dateStr} ref={fechaIRef} onChange={updateData} readOnly={(agenda?.tipoEvento === 'upd' )?true:false }/>
                           </div>
                         </div>
 
                         <div className='col-4'>
                           <div className="mb-3">
                             <label htmlFor="pwd" className="form-label text-center w-100"><b>Fecha Fin:</b></label>
-                            <input type="datetime-local" className="form-control text-center" id="pwd" placeholder="Enter password" name="fechaf" required value={(data.fechaf.length > 0)?data.fechaf:agenda.dateStr} ref={fechaFRef} onChange={updateData } readOnly={(agenda?.tipoEvento === 'upd')?true:false } />
+                            <input type="datetime-local" className="form-control text-center" id="pwd" placeholder="Enter password" name="fechaf" required value={(data.fechaf.length > 0)?data.fechaf:agenda.dateStr} ref={fechaFRef} onChange={updateData } readOnly={(agenda?.tipoEvento === 'upd' && data?.id_estado !== 2)?true:false } />
                           </div>
                         </div>
 
@@ -979,7 +990,7 @@ const [otroEventos , setOtroEventos ] = useState([])
                                                         )
                                                          ? false
                                                          : true 
-                                                  } onClick={entregarVehiculo}> Entregado </Button> 
+                                                  } onClick={entregarVehiculo}> Entregar </Button> 
                     <Button color="success"  disabled={
                                                       (data.id_estado !== 2  ) // solo si fue entregado puede recibir 
                                                       ? true
@@ -989,7 +1000,7 @@ const [otroEventos , setOtroEventos ] = useState([])
                                                          ? false
                                                          : true 
                       
-                                                      } style={{marginRight:'25px'}} onClick={recibirVehiculo}> Recibido </Button> 
+                                                      } style={{marginRight:'25px'}} onClick={recibirVehiculo}> Recibir </Button> 
                     <Button color="warning"  disabled={
                                                         
                                                         ( ('2 3').includes(data.id_estado) ) // si ya fue entregado ya no puede cancelar
@@ -999,7 +1010,7 @@ const [otroEventos , setOtroEventos ] = useState([])
                                                         )
                                                           ? false
                                                           : true 
-                                                      } style={{marginRight:'25px'}} onClick={cancelarAgenda}> Cancelar Agenda</Button>
+                                                      } style={{marginRight:'25px'}} onClick={cancelarAgenda}> Cancelar</Button>
                     </>
                 : <span></span>
                }             
